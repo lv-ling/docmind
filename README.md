@@ -18,6 +18,12 @@ scripts/                 本地开发、数据迁移、质量检查脚本
 
 当前阶段以 `docs/` 为事实源，各代码目录的 `README.md` 说明本模块的职责与禁止依赖。详细文档入口见 [docs/README.md](docs/README.md)。
 
+v0.1 的开发顺序、分端任务和完成状态见 [开发任务](docs/delivery/02-v0.1开发任务.md)。
+
 ## 依赖方向
 
 `apps/web` 只通过契约调用 `services/api`；`services/api` 负责任务编排、数据、权限和敏感信息；`services/ai` 只处理应用层提供的脱敏输入。`packages/*` 可被应用或服务复用，但不能依赖具体应用。
+
+## 工作区命令
+
+JavaScript/TypeScript 工作区由 pnpm 管理，范围为 `apps/*` 和 `packages/*`。根目录统一提供 `dev`、`build`、`lint`、`format`、`typecheck`、`test`、`check` 以及 `infra:*` 脚本；未实现对应命令的包会被安全跳过。

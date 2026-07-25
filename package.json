@@ -1,0 +1,22 @@
+{
+  "name": "docmind",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DocMind document intelligence monorepo",
+  "scripts": {
+    "dev": "pnpm --recursive --parallel --if-present run dev",
+    "build": "pnpm --recursive --if-present run build",
+    "lint": "pnpm --recursive --if-present run lint",
+    "format": "pnpm --recursive --if-present run format",
+    "format:check": "pnpm --recursive --if-present run format:check",
+    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "test": "pnpm --recursive --if-present run test",
+    "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build",
+    "infra:start": "./scripts/dev/infra.sh start",
+    "infra:stop": "./scripts/dev/infra.sh stop",
+    "infra:restart": "./scripts/dev/infra.sh restart",
+    "infra:recreate": "./scripts/dev/infra.sh recreate",
+    "infra:status": "./scripts/dev/infra.sh status",
+    "infra:logs": "./scripts/dev/infra.sh logs"
+  }
+}
