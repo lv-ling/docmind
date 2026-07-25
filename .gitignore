@@ -1,0 +1,10 @@
+.env
+*.env
+!*.env.example
+deploy/compose/.env
+.DS_Store
+node_modules/
+dist/
+target/
+__pycache__/
+.venv/
