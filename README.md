@@ -26,6 +26,6 @@ v0.1 的开发顺序、分端任务和完成状态见 [开发任务](docs/delive
 
 ## 工作区命令
 
-JavaScript/TypeScript 工作区由 pnpm 管理，范围为 `apps/*` 和 `packages/*`。根目录统一提供 `dev`、`build`、`lint`、`format`、`typecheck`、`test`、`check` 以及 `infra:*` 脚本；未实现对应命令的包会被安全跳过。
+JavaScript/TypeScript 工作区由 pnpm 管理，范围为 `apps/*` 和 `packages/*`。根目录统一提供 `dev`、`build`、`lint`、`format`、`typecheck`、`test`、`test:coverage`、`check` 以及 `infra:*` 脚本。质量基线使用 TypeScript 严格模式、ESLint Flat Config、Prettier 和 Vitest。
 
 开发环境固定使用 Node `24.14.1` 和 pnpm `10.13.1`，安装与切换方式见 [Node 与 pnpm 环境](docs/development/02-Node与pnpm环境.md)。

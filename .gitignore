@@ -5,6 +5,7 @@ deploy/compose/.env
 .DS_Store
 node_modules/
 dist/
+coverage/
 target/
 __pycache__/
 .venv/

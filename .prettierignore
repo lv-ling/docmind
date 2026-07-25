@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+target/
+.venv/
+docs/
+deploy/
+*.md
+pnpm-lock.yaml
+packages/contracts/generated/

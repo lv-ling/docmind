@@ -11,11 +11,13 @@
   "scripts": {
     "dev": "pnpm --recursive --parallel --if-present run dev",
     "build": "pnpm --recursive --if-present run build",
-    "lint": "pnpm --recursive --if-present run lint",
-    "format": "pnpm --recursive --if-present run format",
-    "format:check": "pnpm --recursive --if-present run format:check",
-    "typecheck": "pnpm --recursive --if-present run typecheck",
-    "test": "pnpm --recursive --if-present run test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build",
     "infra:start": "./scripts/dev/infra.sh start",
     "infra:stop": "./scripts/dev/infra.sh stop",
@@ -23,5 +25,17 @@
     "infra:recreate": "./scripts/dev/infra.sh recreate",
     "infra:status": "./scripts/dev/infra.sh status",
     "infra:logs": "./scripts/dev/infra.sh logs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.8.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.7.0",
+    "prettier": "3.9.6",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10"
   }
 }
