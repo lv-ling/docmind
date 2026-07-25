@@ -18,6 +18,7 @@
 | `delivery/01-MVP路线图.md` | 分阶段交付、质量门禁、风险和待决策事项 |
 | `delivery/02-v0.1开发任务.md` | v0.1 分层任务、依赖顺序和完成记录 |
 | `development/01-本地基础设施.md` | 本地容器凭据、访问方式和启动顺序 |
+| `development/02-Node与pnpm环境.md` | Node/pnpm 固定版本、安装和升级流程 |
 | `adr/` | 重要技术决策记录，格式为 `ADR-编号-主题.md` |
 
 ## 目录规划

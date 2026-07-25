@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "DocMind document intelligence monorepo",
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": "24.14.1",
+    "pnpm": "10.13.1"
+  },
   "scripts": {
     "dev": "pnpm --recursive --parallel --if-present run dev",
     "build": "pnpm --recursive --if-present run build",
