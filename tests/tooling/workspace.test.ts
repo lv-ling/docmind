@@ -18,4 +18,19 @@ describe('workspace manifest', () => {
     expect(manifest.private).toBe(true);
     expect(manifest.packageManager).toBe('pnpm@10.13.1');
   });
+
+  it('keeps shared editor and ignore rules in place', async () => {
+    const [editorConfig, gitignore, dockerignore] = await Promise.all([
+      readFile(new URL('../../.editorconfig', import.meta.url), 'utf8'),
+      readFile(new URL('../../.gitignore', import.meta.url), 'utf8'),
+      readFile(new URL('../../.dockerignore', import.meta.url), 'utf8'),
+    ]);
+
+    expect(editorConfig).toContain('root = true');
+    expect(editorConfig).toContain('end_of_line = lf');
+    expect(gitignore).toContain('.pnpm-store/');
+    expect(gitignore).toContain('!**/.env.example');
+    expect(dockerignore).toContain('**/node_modules');
+    expect(dockerignore).toContain('**/.env');
+  });
 });

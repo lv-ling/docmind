@@ -1,11 +1,58 @@
+# Local secrets and environment overrides
 .env
-*.env
-!*.env.example
-deploy/compose/.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Operating systems and editors
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+*.pid
+tmp/
+temp/
+
+# Node.js and frontend
 node_modules/
+.pnpm-store/
 dist/
 coverage/
+.vite/
+.turbo/
+.eslintcache
+*.tsbuildinfo
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java
 target/
+build/
+.gradle/
+*.class
+hs_err_pid*
+
+# Python
 __pycache__/
+*.py[cod]
 .venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated contracts
+packages/contracts/generated/
