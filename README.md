@@ -26,6 +26,10 @@ v0.1 的开发顺序、分端任务和完成状态见 [开发任务](docs/delive
 
 ## 工作区命令
 
-JavaScript/TypeScript 工作区由 pnpm 管理，范围为 `apps/*` 和 `packages/*`。根目录统一提供 `dev`、`build`、`lint`、`format`、`typecheck`、`test`、`test:coverage`、`check` 以及 `infra:*` 脚本。质量基线使用 TypeScript 严格模式、ESLint Flat Config、Prettier 和 Vitest。
+JavaScript/TypeScript 工作区由 pnpm 管理，范围为 `apps/*` 和 `packages/*`。根目录统一提供 `dev`、`build`、`lint`、`format`、`typecheck`、`test`、`test:coverage`、`check`、`api:*`、`ai:*` 以及 `infra:*` 脚本。`check` 同时验证 pnpm 工作区、Python AI 和 Java API；质量基线使用 TypeScript 严格模式、ESLint Flat Config、Prettier、Vitest、Ruff、严格 mypy、pytest 和 Maven。
 
 开发环境固定使用 Node `24.14.1` 和 pnpm `10.13.1`，安装与切换方式见 [Node 与 pnpm 环境](docs/development/02-Node与pnpm环境.md)。
+
+真实依赖启动后，可在 AI 与 API 都运行时执行 `pnpm e2e:mvp`。该命令会生成一份确定性的两页敏感 DOCX，并验证 MinIO 直传与摘要、RabbitMQ 调度、Schema 与九国敏感规则、应用层令牌化、Mock 结构化抽取、二次 PII 扫描、字段复核与审批、PDF/安全 HTML 模板、后端 Diff、版本发布和生成新版本式回滚；测试会在本地工作区保留可复查的验收记录。`pnpm e2e:templates` 保留为兼容别名。
+
+需要单独验证三种首期文件格式时，使用 `pnpm e2e:source-formats -- --doc <fixture.doc> --docx <fixture.docx> --pdf <fixture.pdf>`；脚本会逐个校验原件摘要、MIME、不可变下载、PDF 预览和正整数页数。

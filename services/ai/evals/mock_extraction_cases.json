@@ -1,0 +1,72 @@
+[
+  {
+    "id": "contract_amount",
+    "fields": [
+      {
+        "key": "amount",
+        "description": "合同金额",
+        "value_type": "number"
+      }
+    ],
+    "nodes": ["合同金额：100万元"],
+    "json_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount"],
+      "properties": { "amount": { "type": "number" } }
+    },
+    "expected_data": { "amount": 100.0 },
+    "expected_review_paths": []
+  },
+  {
+    "id": "literal_default_and_null",
+    "fields": [
+      {
+        "key": "note",
+        "description": "备注",
+        "value_type": "string",
+        "required": false,
+        "has_default": true,
+        "default": ""
+      },
+      {
+        "key": "optional",
+        "description": "可选项",
+        "value_type": "string",
+        "required": false,
+        "nullable": true
+      }
+    ],
+    "nodes": ["正文中没有这两个字段"],
+    "json_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note", "optional"],
+      "properties": {
+        "note": { "type": "string" },
+        "optional": { "type": ["string", "null"] }
+      }
+    },
+    "expected_data": { "note": "", "optional": null },
+    "expected_review_paths": []
+  },
+  {
+    "id": "ambiguous_amount",
+    "fields": [
+      {
+        "key": "amount",
+        "description": "合同金额",
+        "value_type": "number"
+      }
+    ],
+    "nodes": ["合同金额：100", "合同金额：200"],
+    "json_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount"],
+      "properties": { "amount": { "type": "number" } }
+    },
+    "expected_data": { "amount": 100.0 },
+    "expected_review_paths": ["$.amount"]
+  }
+]

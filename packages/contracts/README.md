@@ -17,9 +17,9 @@ generated/      根据契约生成的代码，不手工修改、不提交 Git
 
 ```bash
 pnpm --filter @docmind/contracts build
+pnpm --filter @docmind/contracts generate
 pnpm --filter @docmind/contracts typecheck
 pnpm --filter @docmind/contracts test
 ```
 
-业务契约从 `src/index.ts` 统一导出。OpenAPI、JSON Schema 和事件 Schema 的具体内容在 P2.2-P2.9 中逐步补充。
-
+手写业务契约从 `src/index.ts` 统一导出；OpenAPI 生成类型通过 `@docmind/contracts/openapi` 子路径导入。`build` 会先重新生成类型，`generated/` 不手工修改和提交。

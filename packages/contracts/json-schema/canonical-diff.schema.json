@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docmind.local/schemas/canonical-diff.schema.json",
+  "title": "CanonicalDiff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["baseline", "target", "algorithm_version", "changes"],
+  "properties": {
+    "baseline": { "$ref": "#/$defs/documentRef" },
+    "target": { "$ref": "#/$defs/documentRef" },
+    "algorithm_version": { "type": "string", "minLength": 1 },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "before", "after", "before_text", "after_text"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "enum": ["insert", "delete", "replace", "format", "move"] },
+          "before": { "$ref": "#/$defs/nullableAnchor" },
+          "after": { "$ref": "#/$defs/nullableAnchor" },
+          "before_text": { "type": ["string", "null"] },
+          "after_text": { "type": ["string", "null"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "documentRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "source_version_id"],
+          "properties": {
+            "kind": { "const": "source_version" },
+            "source_version_id": { "type": "string", "format": "uuid" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "template_version_id"],
+          "properties": {
+            "kind": { "const": "template_version" },
+            "template_version_id": { "type": "string", "format": "uuid" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "instance_version_id"],
+          "properties": {
+            "kind": { "const": "instance_version" },
+            "instance_version_id": { "type": "string", "format": "uuid" }
+          }
+        }
+      ]
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "start_offset", "end_offset", "json_path"],
+      "properties": {
+        "node_id": { "type": "string", "minLength": 1 },
+        "start_offset": { "type": ["integer", "null"], "minimum": 0 },
+        "end_offset": { "type": ["integer", "null"], "minimum": 0 },
+        "json_path": { "type": ["string", "null"] }
+      }
+    },
+    "nullableAnchor": {
+      "oneOf": [{ "$ref": "#/$defs/anchor" }, { "type": "null" }]
+    }
+  }
+}

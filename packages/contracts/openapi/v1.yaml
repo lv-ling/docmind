@@ -1,0 +1,2078 @@
+openapi: 3.1.0
+info:
+  title: DocMind API
+  version: v1-draft
+  description: >-
+    Draft transport contract. Product capabilities are enabled by PRD version;
+    document-instance, review, and Diff endpoints are not available in v0.1.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: Exchange local credentials for a short-lived access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401': { $ref: '#/components/responses/Error' }
+  /me:
+    get:
+      operationId: getCurrentUser
+      summary: Get the authenticated user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserSummary' }
+        '401': { $ref: '#/components/responses/Error' }
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List workspaces available to the authenticated user
+      responses:
+        '200':
+          description: Workspace memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkspaceSummary' }
+    post:
+      operationId: createWorkspace
+      summary: Create a workspace owned by the authenticated user
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWorkspaceRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of a previously created workspace
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSummary' }
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSummary' }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /workspaces/{workspaceId}/members:
+    get:
+      operationId: listWorkspaceMembers
+      summary: List members when the caller can manage the workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Workspace members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkspaceMember' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /workspaces/{workspaceId}/sources:
+    get:
+      operationId: listSources
+      summary: List source documents visible in a workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Source document page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceDocumentPage' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createSourceUpload
+      summary: Create a DOC, DOCX, or PDF upload session
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSourceUploadRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of an existing upload session
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateSourceUploadResponse' }
+        '201':
+          description: Upload session created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateSourceUploadResponse' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /sources/{sourceId}:
+    get:
+      operationId: getSource
+      summary: Get a source document and its immutable version history
+      parameters:
+        - $ref: '#/components/parameters/SourceId'
+      responses:
+        '200':
+          description: Source document detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceDocumentDetail' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /sources/{sourceId}/versions:
+    post:
+      operationId: createSourceVersionUpload
+      summary: Create an upload session for the next immutable source version
+      parameters:
+        - $ref: '#/components/parameters/SourceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSourceVersionUploadRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of an existing upload session
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateSourceUploadResponse' }
+        '201':
+          description: Version upload session created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateSourceUploadResponse' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /source-versions/{sourceVersionId}/complete:
+    post:
+      operationId: completeSourceUpload
+      summary: Verify the uploaded object and finalize the immutable source version
+      parameters:
+        - $ref: '#/components/parameters/SourceVersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CompleteSourceUploadRequest' }
+      responses:
+        '200':
+          description: Upload verified or idempotently replayed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompleteSourceUploadResponse' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /source-versions/{sourceVersionId}/content:
+    get:
+      operationId: getSourceVersionContent
+      summary: Stream the authenticated immutable original for read-only viewing
+      parameters:
+        - $ref: '#/components/parameters/SourceVersionId'
+      responses:
+        '200':
+          description: Original DOC, DOCX, or PDF bytes
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/msword:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: { type: string, format: binary }
+            application/pdf:
+              schema: { type: string, format: binary }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /source-versions/{sourceVersionId}/preview:
+    get:
+      operationId: getSourceVersionPreview
+      summary: Get read-only preview state and same-origin access URLs
+      parameters:
+        - $ref: '#/components/parameters/SourceVersionId'
+      responses:
+        '200':
+          description: Preview access descriptor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourcePreviewAccess' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /source-previews/{sourcePreviewId}/content:
+    get:
+      operationId: getSourcePreviewContent
+      summary: Stream a ready, authenticated read-only preview
+      parameters:
+        - name: sourcePreviewId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Derived PDF preview bytes
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /workspaces/{workspaceId}/schemas:
+    get:
+      operationId: listExtractionSchemas
+      summary: List extraction schemas in a workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Extraction schemas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExtractionSchema' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createExtractionSchema
+      summary: Create a versioned extraction schema
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSchemaRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of the existing schema
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExtractionSchemaDetail' }
+        '201':
+          description: Schema and first published version created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExtractionSchemaDetail' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /schemas/{schemaId}:
+    get:
+      operationId: getExtractionSchema
+      summary: Get a schema with immutable version history
+      parameters:
+        - $ref: '#/components/parameters/SchemaId'
+      responses:
+        '200':
+          description: Schema detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExtractionSchemaDetail' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /schemas/{schemaId}/versions:
+    post:
+      operationId: createExtractionSchemaVersion
+      summary: Create an immutable extraction schema version
+      parameters:
+        - $ref: '#/components/parameters/SchemaId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSchemaVersionRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of the existing version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchemaVersion' }
+        '201':
+          description: Immutable published schema version created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchemaVersion' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /workspaces/{workspaceId}/schema-templates:
+    get:
+      operationId: listSchemaTemplates
+      summary: List reusable extraction schema templates
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Schema templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SchemaTemplate' }
+        '403': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createSchemaTemplate
+      summary: Save an immutable schema version as a reusable template
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSchemaTemplateRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of the existing schema template
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchemaTemplate' }
+        '201':
+          description: Schema template created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SchemaTemplate' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /workspaces/{workspaceId}/sensitive-rule-templates:
+    get:
+      operationId: listSensitiveRuleTemplates
+      summary: List versioned sensitive-rule templates
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Sensitive-rule templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SensitiveRuleTemplate' }
+        '403': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createSensitiveRuleTemplate
+      summary: Create an RE2-safe sensitive-rule template
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSensitiveRuleTemplateRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of the existing sensitive-rule template
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveRuleTemplateDetail' }
+        '201':
+          description: Sensitive-rule template and first published version created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveRuleTemplateDetail' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /sensitive-rule-templates/{sensitiveRuleTemplateId}:
+    get:
+      operationId: getSensitiveRuleTemplate
+      summary: Get a sensitive-rule template with immutable version history
+      parameters:
+        - $ref: '#/components/parameters/SensitiveRuleTemplateId'
+      responses:
+        '200':
+          description: Sensitive-rule template detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveRuleTemplateDetail' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /sensitive-rule-templates/{sensitiveRuleTemplateId}/versions:
+    post:
+      operationId: createSensitiveRuleTemplateVersion
+      summary: Create an immutable published sensitive-rule template version
+      parameters:
+        - $ref: '#/components/parameters/SensitiveRuleTemplateId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSensitiveRuleTemplateVersionRequest' }
+      responses:
+        '200':
+          description: Idempotent replay of the existing version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveRuleTemplateVersion' }
+        '201':
+          description: Immutable published sensitive-rule template version created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SensitiveRuleTemplateVersion' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /source-versions/{sourceVersionId}/extractions:
+    post:
+      operationId: createExtractionRun
+      summary: Start a tokenized, schema-constrained extraction
+      parameters:
+        - $ref: '#/components/parameters/SourceVersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateExtractionRequest' }
+      responses:
+        '202':
+          description: Extraction accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedExtractionJob' }
+        '400': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /extractions/{extractionId}:
+    get:
+      operationId: getExtractionRun
+      summary: Get extraction status and permission-filtered results
+      parameters:
+        - $ref: '#/components/parameters/ExtractionId'
+      responses:
+        '200':
+          description: Extraction run and safe display result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExtractionRunView' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /extractions/{extractionId}/events:
+    get:
+      operationId: streamExtractionRunEvents
+      summary: Stream authenticated extraction status changes
+      parameters:
+        - $ref: '#/components/parameters/ExtractionId'
+      responses:
+        '200':
+          description: Server-sent status event stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /extractions/{extractionId}/fields/{fieldResultId}:
+    patch:
+      operationId: reviewExtractionField
+      summary: Accept, modify, or reject one extracted field
+      parameters:
+        - $ref: '#/components/parameters/ExtractionId'
+        - $ref: '#/components/parameters/FieldResultId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviewExtractionFieldRequest' }
+      responses:
+        '200':
+          description: Field review recorded and current safe extraction view returned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExtractionRunView' }
+        '409': { $ref: '#/components/responses/Error' }
+  /extractions/{extractionId}/approve:
+    post:
+      operationId: approveExtractionRun
+      summary: Approve an extraction after required field reviews
+      parameters:
+        - $ref: '#/components/parameters/ExtractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApproveExtractionRequest' }
+      responses:
+        '200':
+          description: Extraction approved and current safe extraction view returned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExtractionRunView' }
+        '409': { $ref: '#/components/responses/Error' }
+  /source-versions/{sourceVersionId}/templates:
+    post:
+      operationId: createTemplateFromSource
+      summary: Start deterministic source-to-template conversion
+      parameters:
+        - $ref: '#/components/parameters/SourceVersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTemplateRequest' }
+      responses:
+        '202':
+          description: Template conversion accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptedTemplateJob' }
+        '409': { $ref: '#/components/responses/Error' }
+  /workspaces/{workspaceId}/templates:
+    get:
+      operationId: listDocumentTemplates
+      summary: List source-linked templates in a workspace
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Templates ordered by latest change
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DocumentTemplate' }
+        '403': { $ref: '#/components/responses/Error' }
+  /templates/{templateId}:
+    get:
+      operationId: getDocumentTemplate
+      summary: Get template conversion state, current version, and immutable history
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      responses:
+        '200':
+          description: Template detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentTemplateDetail' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /templates/{templateId}/versions:
+    post:
+      operationId: createTemplateVersion
+      summary: Save a manual template edit as a new immutable version
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTemplateVersionRequest' }
+      responses:
+        '200':
+          description: Template version created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentTemplateVersion' }
+        '409': { $ref: '#/components/responses/Error' }
+  /templates/{templateId}/versions/{versionId}/publish:
+    post:
+      operationId: publishTemplateVersion
+      summary: Publish the current checked template version
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+        - $ref: '#/components/parameters/VersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PublishTemplateVersionRequest' }
+      responses:
+        '200':
+          description: Published immutable version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentTemplateVersion' }
+        '409': { $ref: '#/components/responses/Error' }
+  /templates/{templateId}/rollback:
+    post:
+      operationId: rollbackDocumentTemplate
+      summary: Restore a prior version by creating a new published version
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RollbackTemplateRequest' }
+      responses:
+        '200':
+          description: Newly created rollback version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentTemplateVersion' }
+        '409': { $ref: '#/components/responses/Error' }
+  /template-resources/{templateResourceId}/content:
+    get:
+      operationId: getTemplateResourceContent
+      summary: Read an authenticated template resource through the application
+      parameters:
+        - $ref: '#/components/parameters/TemplateResourceId'
+      responses:
+        '200':
+          description: Resource bytes
+          content:
+            image/*:
+              schema: { type: string, format: binary }
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /template-versions/{templateVersionId}/instances:
+    post:
+      operationId: createDocumentInstance
+      summary: Create an instance from an immutable published template version
+      parameters:
+        - $ref: '#/components/parameters/TemplateVersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentInstanceRequest'
+      responses:
+        '201':
+          description: Instance created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentInstance'
+        '400': { $ref: '#/components/responses/Error' }
+  /instances/{instanceId}:
+    get:
+      operationId: getDocumentInstance
+      summary: Get the instance, current version, and edit-lock state
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '200':
+          description: Instance state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentInstance'
+        '404': { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: saveDocumentInstance
+      summary: Save a new immutable instance version
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveDocumentInstanceRequest'
+      responses:
+        '200': { description: Saved }
+        '409': { $ref: '#/components/responses/Error' }
+  /instances/{instanceId}/submit:
+    post:
+      operationId: submitDocumentInstance
+      summary: Submit the current version of an instance
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: { type: [string, 'null'] }
+      responses:
+        '200': { description: Submitted }
+        '409': { $ref: '#/components/responses/Error' }
+  /instances/{instanceId}/edit-lock:
+    post:
+      operationId: acquireOrRenewInstanceEditLock
+      summary: Acquire or renew the instance edit lease
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { description: Lease acquired or renewed }
+        '409': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: releaseInstanceEditLock
+      summary: Release the caller's instance edit lease
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+      responses:
+        '204': { description: Lease released }
+  /instance-versions/{instanceVersionId}/comment-threads:
+    post:
+      operationId: createCommentThread
+      summary: Create a comment thread at a resilient text anchor
+      parameters:
+        - $ref: '#/components/parameters/InstanceVersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentThreadRequest'
+      responses:
+        '201': { description: Comment thread created }
+  /comment-threads/{threadId}/comments:
+    post:
+      operationId: createComment
+      summary: Reply to a comment thread
+      parameters:
+        - $ref: '#/components/parameters/ThreadId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1 }
+      responses:
+        '201': { description: Reply created }
+  /comment-threads/{threadId}:
+    patch:
+      operationId: resolveCommentThread
+      summary: Resolve or reopen a comment thread
+      parameters:
+        - $ref: '#/components/parameters/ThreadId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolved]
+              properties:
+                resolved: { type: boolean }
+      responses:
+        '200': { description: Thread state updated }
+  /instance-versions/{instanceVersionId}/proofreading-runs:
+    post:
+      operationId: createProofreadingRun
+      summary: Create a tokenized proofreading run for one immutable instance version
+      parameters:
+        - $ref: '#/components/parameters/InstanceVersionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202': { description: Proofreading job accepted }
+  /proofreading-suggestions/{suggestionId}:
+    patch:
+      operationId: dismissProofreadingSuggestion
+      summary: Dismiss one proofreading suggestion without changing document content
+      parameters:
+        - $ref: '#/components/parameters/SuggestionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: [string, 'null'] }
+      responses:
+        '200': { description: Suggestion resolved }
+  /instances/{instanceId}/proofreading-suggestions/{suggestionId}/apply:
+    post:
+      operationId: applyProofreadingSuggestion
+      summary: Apply one suggestion and create a new immutable instance version
+      parameters:
+        - $ref: '#/components/parameters/InstanceId'
+        - $ref: '#/components/parameters/SuggestionId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { description: Suggestion applied and new instance version saved }
+        '409': { $ref: '#/components/responses/Error' }
+  /diffs:
+    post:
+      operationId: createDiffRun
+      summary: Create a canonical comparison between two immutable document versions
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiffRunRequest'
+      responses:
+        '202': { description: Diff job accepted }
+        '400': { $ref: '#/components/responses/Error' }
+  /diffs/{diffId}:
+    get:
+      operationId: getDiffRun
+      summary: Get the status or completed canonical Diff
+      parameters:
+        - name: diffId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Diff result }
+        '404': { $ref: '#/components/responses/Error' }
+components:
+  parameters:
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SourceId:
+      name: sourceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SourceVersionId:
+      name: sourceVersionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SchemaId:
+      name: schemaId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SensitiveRuleTemplateId:
+      name: sensitiveRuleTemplateId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ExtractionId:
+      name: extractionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    FieldResultId:
+      name: fieldResultId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TemplateId:
+      name: templateId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TemplateVersionId:
+      name: templateVersionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    VersionId:
+      name: versionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    TemplateResourceId:
+      name: templateResourceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    InstanceId:
+      name: instanceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    InstanceVersionId:
+      name: instanceVersionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ThreadId:
+      name: threadId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    SuggestionId:
+      name: suggestionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Quoted current resource revision, for example `"7"`.
+      schema: { type: string, pattern: '^"[0-9]+"$' }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema: { type: string, minLength: 1 }
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+    LoginResponse:
+      type: object
+      additionalProperties: false
+      required: [access_token, token_type, expires_in, user]
+      properties:
+        access_token: { type: string, minLength: 1 }
+        token_type: { const: Bearer }
+        expires_in: { type: integer, minimum: 1 }
+        user: { $ref: '#/components/schemas/UserSummary' }
+    UserSummary:
+      type: object
+      additionalProperties: false
+      required: [id, email, display_name, status]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        display_name: { type: string, minLength: 1 }
+        status: { enum: [active, disabled] }
+    WorkspaceSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name, slug, role, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1 }
+        slug: { type: string, pattern: '^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$' }
+        role: { enum: [owner, admin, editor, reviewer, viewer] }
+        created_at: { type: string, format: date-time }
+    WorkspaceMember:
+      type: object
+      additionalProperties: false
+      required: [id, workspace_id, user, role, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        user: { $ref: '#/components/schemas/UserSummary' }
+        role: { enum: [owner, admin, editor, reviewer, viewer] }
+        status: { enum: [active, suspended] }
+        created_at: { type: string, format: date-time }
+    CreateWorkspaceRequest:
+      type: object
+      additionalProperties: false
+      required: [name, slug]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        slug: { type: string, pattern: '^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$' }
+    AcceptedJob:
+      type: object
+      additionalProperties: false
+      required: [job_id, request_id]
+      properties:
+        job_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+    AcceptedExtractionJob:
+      type: object
+      additionalProperties: false
+      required: [job_id, extraction_id, request_id]
+      properties:
+        job_id: { type: string, format: uuid }
+        extraction_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+    CreateSourceUploadRequest:
+      type: object
+      additionalProperties: false
+      required: [document_name, original_file_name, declared_mime_type, size_bytes]
+      properties:
+        document_name: { type: string, minLength: 1 }
+        original_file_name: { type: string, minLength: 1 }
+        declared_mime_type: { type: string }
+        size_bytes: { type: integer, minimum: 1, maximum: 10485760 }
+    CreateSourceVersionUploadRequest:
+      type: object
+      additionalProperties: false
+      required: [original_file_name, declared_mime_type, size_bytes]
+      properties:
+        original_file_name: { type: string, minLength: 1 }
+        declared_mime_type: { type: string }
+        size_bytes: { type: integer, minimum: 1, maximum: 10485760 }
+    CompleteSourceUploadRequest:
+      type: object
+      additionalProperties: false
+      required: [size_bytes, detected_mime_type, sha256, object_etag]
+      properties:
+        size_bytes: { type: integer, minimum: 1, maximum: 10485760 }
+        detected_mime_type:
+          enum:
+            - application/msword
+            - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+            - application/pdf
+        sha256: { type: string, pattern: '^[a-fA-F0-9]{64}$' }
+        object_etag: { type: string, minLength: 1 }
+    SourceFileMetadata:
+      type: object
+      additionalProperties: false
+      required: [original_file_name, file_type, mime_type, size_bytes, sha256]
+      properties:
+        original_file_name: { type: string, minLength: 1 }
+        file_type: { enum: [doc, docx, pdf] }
+        mime_type:
+          enum:
+            - application/msword
+            - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+            - application/pdf
+        size_bytes: { type: integer, minimum: 1, maximum: 10485760 }
+        sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+    SourceDocument:
+      type: object
+      additionalProperties: false
+      required:
+        [id, workspace_id, name, current_version_id, created_at, created_by, updated_at, updated_by]
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        current_version_id: { type: [string, 'null'], format: uuid }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid }
+    SourceVersion:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - source_document_id
+        - workspace_id
+        - version_number
+        - status
+        - original_file_name
+        - file_type
+        - declared_mime_type
+        - expected_size_bytes
+        - file
+        - failure_code
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        source_document_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        version_number: { type: integer, minimum: 1 }
+        status: { enum: [uploading, uploaded, processing, ready, failed] }
+        original_file_name: { type: string, minLength: 1 }
+        file_type: { enum: [doc, docx, pdf] }
+        declared_mime_type: { type: string }
+        expected_size_bytes: { type: integer, minimum: 1, maximum: 10485760 }
+        file:
+          oneOf:
+            - $ref: '#/components/schemas/SourceFileMetadata'
+            - type: 'null'
+        failure_code: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+    UploadSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - source_document_id
+        - source_version_id
+        - status
+        - upload_url
+        - upload_method
+        - required_headers
+        - max_size_bytes
+        - expires_at
+        - created_at
+      properties:
+        id: { type: string, format: uuid }
+        source_document_id: { type: string, format: uuid }
+        source_version_id: { type: string, format: uuid }
+        status: { enum: [pending, uploading, completed, expired, aborted] }
+        upload_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: 'null'
+        upload_method: { const: PUT }
+        required_headers:
+          type: object
+          additionalProperties: { type: string }
+        max_size_bytes: { type: integer, const: 10485760 }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    CreateSourceUploadResponse:
+      type: object
+      additionalProperties: false
+      required: [source, version, upload]
+      properties:
+        source: { $ref: '#/components/schemas/SourceDocument' }
+        version: { $ref: '#/components/schemas/SourceVersion' }
+        upload: { $ref: '#/components/schemas/UploadSession' }
+    CompleteSourceUploadResponse:
+      type: object
+      additionalProperties: false
+      required: [source, version]
+      properties:
+        source: { $ref: '#/components/schemas/SourceDocument' }
+        version: { $ref: '#/components/schemas/SourceVersion' }
+    SourceDocumentDetail:
+      type: object
+      additionalProperties: false
+      required: [source, versions]
+      properties:
+        source: { $ref: '#/components/schemas/SourceDocument' }
+        versions:
+          type: array
+          items: { $ref: '#/components/schemas/SourceVersion' }
+    SourceDocumentPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, has_more]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SourceDocument' }
+        next_cursor: { type: [string, 'null'] }
+        has_more: { type: boolean }
+    SourcePreview:
+      type: object
+      additionalProperties: false
+      required:
+        [id, source_version_id, status, format, page_count, failure_code, created_at, completed_at]
+      properties:
+        id: { type: string, format: uuid }
+        source_version_id: { type: string, format: uuid }
+        status: { enum: [queued, processing, ready, failed] }
+        format: { enum: [pdf, page_images] }
+        page_count: { type: [integer, 'null'], minimum: 1 }
+        failure_code: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: [string, 'null'], format: date-time }
+    SourcePreviewAccess:
+      type: object
+      additionalProperties: false
+      required: [preview, view_url, original_content_url]
+      properties:
+        preview: { $ref: '#/components/schemas/SourcePreview' }
+        view_url: { type: [string, 'null'] }
+        original_content_url: { type: string }
+    SchemaFieldDefault:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [kind]
+          properties:
+            kind: { const: none }
+        - type: object
+          additionalProperties: false
+          required: [kind, value]
+          properties:
+            kind: { const: literal }
+            value: true
+    SchemaFieldConstraints:
+      type: object
+      additionalProperties: false
+      required: [format, pattern, enum_values, min_length, max_length, minimum, maximum]
+      properties:
+        format: { type: [string, 'null'], maxLength: 100 }
+        pattern: { type: [string, 'null'], maxLength: 2000, description: RE2-safe pattern }
+        enum_values: { type: array, maxItems: 200, items: true }
+        min_length: { type: [integer, 'null'], minimum: 0 }
+        max_length: { type: [integer, 'null'], minimum: 0 }
+        minimum: { type: [number, 'null'] }
+        maximum: { type: [number, 'null'] }
+    SchemaFieldDisplay:
+      type: object
+      additionalProperties: false
+      required: [mask, view_role_keys]
+      properties:
+        mask: { enum: [none, partial, full] }
+        view_role_keys:
+          type: array
+          maxItems: 50
+          items: { type: string, pattern: '^[a-z][a-z0-9_-]{0,49}$' }
+    SchemaFieldInput:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          key,
+          json_path,
+          description,
+          value_type,
+          array_item_type,
+          required,
+          nullable,
+          default,
+          sensitivity,
+          constraints,
+          examples,
+          extraction_hint,
+          display,
+          metadata,
+          position,
+        ]
+      properties:
+        key: { type: string, maxLength: 64, pattern: '^[A-Za-z_][A-Za-z0-9_]*$' }
+        json_path:
+          type: string
+          minLength: 3
+          maxLength: 500
+          pattern: '^\$(?:\.[A-Za-z_][A-Za-z0-9_]*)+$'
+        description: { type: string, maxLength: 2000 }
+        value_type: { enum: [string, number, integer, boolean, date, datetime, object, array] }
+        array_item_type:
+          type: [string, 'null']
+          enum: [string, number, integer, boolean, date, datetime, object, array, null]
+        required: { type: boolean }
+        nullable: { type: boolean }
+        default: { $ref: '#/components/schemas/SchemaFieldDefault' }
+        sensitivity: { enum: [none, low, medium, high] }
+        constraints: { $ref: '#/components/schemas/SchemaFieldConstraints' }
+        examples: { type: array, maxItems: 20, items: true }
+        extraction_hint: { type: [string, 'null'], maxLength: 2000 }
+        display: { $ref: '#/components/schemas/SchemaFieldDisplay' }
+        metadata: { type: object, additionalProperties: true }
+        position: { type: integer, minimum: 0 }
+    SchemaField:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          key,
+          json_path,
+          description,
+          value_type,
+          array_item_type,
+          required,
+          nullable,
+          default,
+          sensitivity,
+          constraints,
+          examples,
+          extraction_hint,
+          display,
+          metadata,
+          position,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string, maxLength: 64, pattern: '^[A-Za-z_][A-Za-z0-9_]*$' }
+        json_path:
+          type: string
+          minLength: 3
+          maxLength: 500
+          pattern: '^\$(?:\.[A-Za-z_][A-Za-z0-9_]*)+$'
+        description: { type: string, maxLength: 2000 }
+        value_type: { enum: [string, number, integer, boolean, date, datetime, object, array] }
+        array_item_type:
+          type: [string, 'null']
+          enum: [string, number, integer, boolean, date, datetime, object, array, null]
+        required: { type: boolean }
+        nullable: { type: boolean }
+        default: { $ref: '#/components/schemas/SchemaFieldDefault' }
+        sensitivity: { enum: [none, low, medium, high] }
+        constraints: { $ref: '#/components/schemas/SchemaFieldConstraints' }
+        examples: { type: array, maxItems: 20, items: true }
+        extraction_hint: { type: [string, 'null'], maxLength: 2000 }
+        display: { $ref: '#/components/schemas/SchemaFieldDisplay' }
+        metadata: { type: object, additionalProperties: true }
+        position: { type: integer, minimum: 0 }
+    ExtractionSchema:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          workspace_id,
+          name,
+          description,
+          current_version_id,
+          created_at,
+          created_by,
+          updated_at,
+          updated_by,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        current_version_id: { type: [string, 'null'], format: uuid }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid }
+    SchemaVersion:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          schema_id,
+          workspace_id,
+          version_number,
+          status,
+          fields,
+          json_schema,
+          change_summary,
+          created_at,
+          created_by,
+          published_at,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        schema_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        version_number: { type: integer, minimum: 1 }
+        status: { enum: [draft, published, superseded] }
+        fields:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 200,
+            items: { $ref: '#/components/schemas/SchemaField' },
+          }
+        json_schema: { type: object, additionalProperties: true }
+        change_summary: { type: string, maxLength: 1000 }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        published_at: { type: [string, 'null'], format: date-time }
+    ExtractionSchemaDetail:
+      type: object
+      additionalProperties: false
+      required: [schema, current_version, versions]
+      properties:
+        schema: { $ref: '#/components/schemas/ExtractionSchema' }
+        current_version: { $ref: '#/components/schemas/SchemaVersion' }
+        versions: { type: array, items: { $ref: '#/components/schemas/SchemaVersion' } }
+    CreateSchemaRequest:
+      type: object
+      additionalProperties: false
+      required: [name, description, fields]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        fields:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 200,
+            items: { $ref: '#/components/schemas/SchemaFieldInput' },
+          }
+    CreateSchemaVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [fields, change_summary]
+      properties:
+        fields:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 200,
+            items: { $ref: '#/components/schemas/SchemaFieldInput' },
+          }
+        change_summary: { type: string, minLength: 1, maxLength: 1000 }
+    CreateSchemaTemplateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, description, schema_version_id]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        schema_version_id: { type: string, format: uuid }
+    SchemaTemplate:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          workspace_id,
+          name,
+          description,
+          current_schema_version_id,
+          created_at,
+          created_by,
+          updated_at,
+          updated_by,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        current_schema_version_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid }
+    SensitiveDataType:
+      enum:
+        [
+          china_national_id,
+          identity_document,
+          passport,
+          phone_number,
+          email_address,
+          credit_card,
+          bank_account,
+          ip_address,
+          person_name,
+          location,
+          custom,
+        ]
+    SensitiveRuleInput:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          key,
+          name,
+          description,
+          data_type,
+          recognizer_kind,
+          locales,
+          country_codes,
+          regex_pattern,
+          regex_dialect,
+          dictionary_terms,
+          validator_name,
+          confidence_threshold,
+          priority,
+          enabled,
+        ]
+      properties:
+        key: { type: string, minLength: 1, maxLength: 64 }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        data_type: { $ref: '#/components/schemas/SensitiveDataType' }
+        recognizer_kind: { enum: [presidio, regex, dictionary, validator] }
+        locales: { type: array, maxItems: 50, items: { type: string, maxLength: 35 } }
+        country_codes: { type: array, maxItems: 50, items: { type: string, pattern: '^[A-Z]{2}$' } }
+        regex_pattern: { type: [string, 'null'], maxLength: 2000 }
+        regex_dialect: { type: [string, 'null'], enum: [re2, null] }
+        dictionary_terms:
+          { type: array, maxItems: 10000, items: { type: string, minLength: 1, maxLength: 256 } }
+        validator_name:
+          type: [string, 'null']
+          enum:
+            [
+              cn_resident_identity,
+              e164_phone,
+              email,
+              luhn,
+              iban,
+              ip_address,
+              passport_document,
+              null,
+            ]
+        confidence_threshold: { type: number, minimum: 0, maximum: 1 }
+        priority: { type: integer, minimum: -1000, maximum: 1000 }
+        enabled: { type: boolean }
+    SensitiveRule:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          key,
+          name,
+          description,
+          data_type,
+          recognizer_kind,
+          locales,
+          country_codes,
+          regex_pattern,
+          regex_dialect,
+          dictionary_terms,
+          validator_name,
+          confidence_threshold,
+          priority,
+          enabled,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        key: { type: string, minLength: 1, maxLength: 64 }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        data_type: { $ref: '#/components/schemas/SensitiveDataType' }
+        recognizer_kind: { enum: [presidio, regex, dictionary, validator] }
+        locales: { type: array, maxItems: 50, items: { type: string, maxLength: 35 } }
+        country_codes: { type: array, maxItems: 50, items: { type: string, pattern: '^[A-Z]{2}$' } }
+        regex_pattern: { type: [string, 'null'], maxLength: 2000 }
+        regex_dialect: { type: [string, 'null'], enum: [re2, null] }
+        dictionary_terms: { type: array, maxItems: 10000, items: { type: string } }
+        validator_name:
+          type: [string, 'null']
+          enum:
+            [
+              cn_resident_identity,
+              e164_phone,
+              email,
+              luhn,
+              iban,
+              ip_address,
+              passport_document,
+              null,
+            ]
+        confidence_threshold: { type: number, minimum: 0, maximum: 1 }
+        priority: { type: integer, minimum: -1000, maximum: 1000 }
+        enabled: { type: boolean }
+    SensitiveRuleTemplate:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          workspace_id,
+          name,
+          description,
+          current_version_id,
+          created_at,
+          created_by,
+          updated_at,
+          updated_by,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        current_version_id: { type: [string, 'null'], format: uuid }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid }
+    SensitiveRuleTemplateVersion:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          template_id,
+          workspace_id,
+          version_number,
+          status,
+          rules,
+          change_summary,
+          created_at,
+          created_by,
+          published_at,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        version_number: { type: integer, minimum: 1 }
+        status: { enum: [draft, published, superseded] }
+        rules:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 200,
+            items: { $ref: '#/components/schemas/SensitiveRule' },
+          }
+        change_summary: { type: string, maxLength: 1000 }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        published_at: { type: [string, 'null'], format: date-time }
+    SensitiveRuleTemplateDetail:
+      type: object
+      additionalProperties: false
+      required: [template, current_version, versions]
+      properties:
+        template: { $ref: '#/components/schemas/SensitiveRuleTemplate' }
+        current_version: { $ref: '#/components/schemas/SensitiveRuleTemplateVersion' }
+        versions:
+          { type: array, items: { $ref: '#/components/schemas/SensitiveRuleTemplateVersion' } }
+    CreateSensitiveRuleTemplateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, description, rules]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        description: { type: string, maxLength: 2000 }
+        rules:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 200,
+            items: { $ref: '#/components/schemas/SensitiveRuleInput' },
+          }
+    CreateSensitiveRuleTemplateVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [rules, change_summary]
+      properties:
+        rules:
+          {
+            type: array,
+            minItems: 1,
+            maxItems: 200,
+            items: { $ref: '#/components/schemas/SensitiveRuleInput' },
+          }
+        change_summary: { type: string, minLength: 1, maxLength: 1000 }
+    CreateExtractionRequest:
+      type: object
+      additionalProperties: false
+      required: [schema_version_id, sensitive_rule_template_version_id]
+      properties:
+        schema_version_id: { type: string, format: uuid }
+        sensitive_rule_template_version_id: { type: [string, 'null'], format: uuid }
+    ExtractionDisplayValue:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [access, value]
+          properties:
+            access: { const: visible }
+            value: true
+        - type: object
+          additionalProperties: false
+          required: [access, value, masked_preview]
+          properties:
+            access: { const: masked }
+            value: { type: 'null' }
+            masked_preview: { type: string, maxLength: 512 }
+    ExtractionEvidenceView:
+      type: object
+      additionalProperties: false
+      required: [page_number, node_id, display_text, is_masked, start_offset, end_offset]
+      properties:
+        page_number: { type: [integer, 'null'], minimum: 1 }
+        node_id: { type: string, minLength: 1, maxLength: 255 }
+        display_text: { type: string, maxLength: 1000 }
+        is_masked: { type: boolean }
+        start_offset: { type: [integer, 'null'], minimum: 0 }
+        end_offset: { type: [integer, 'null'], minimum: 0 }
+    ExtractionCandidateView:
+      type: object
+      additionalProperties: false
+      required: [display_value, confidence, evidence]
+      properties:
+        display_value: { $ref: '#/components/schemas/ExtractionDisplayValue' }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/ExtractionEvidenceView' }
+    ExtractionFieldResultView:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          json_path,
+          display_value,
+          value_source,
+          missing_reason,
+          confidence,
+          evidence,
+          candidates,
+          needs_review,
+          review_status,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        json_path: { type: string, minLength: 3, maxLength: 500 }
+        display_value: { $ref: '#/components/schemas/ExtractionDisplayValue' }
+        value_source: { enum: [extracted, default, manual, 'null'] }
+        missing_reason:
+          type: [string, 'null']
+          enum:
+            [
+              not_found,
+              insufficient_evidence,
+              ambiguous,
+              invalid_model_output,
+              sensitive_token_missing,
+              null,
+            ]
+        confidence: { type: [number, 'null'], minimum: 0, maximum: 1 }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/ExtractionEvidenceView' }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/ExtractionCandidateView' }
+        needs_review: { type: boolean }
+        review_status: { enum: [pending, accepted, modified, rejected] }
+    ExtractionModelMetadata:
+      type: object
+      additionalProperties: false
+      required: [provider, model, prompt_version, input_tokens, output_tokens]
+      properties:
+        provider: { type: string }
+        model: { type: string }
+        prompt_version: { type: string }
+        input_tokens: { type: [integer, 'null'], minimum: 0 }
+        output_tokens: { type: [integer, 'null'], minimum: 0 }
+    ExtractionResultView:
+      type: object
+      additionalProperties: false
+      required: [data, contains_masked_values, fields, model, validation_errors]
+      properties:
+        data: { type: object, additionalProperties: true }
+        contains_masked_values: { type: boolean }
+        fields:
+          type: array
+          items: { $ref: '#/components/schemas/ExtractionFieldResultView' }
+        model: { $ref: '#/components/schemas/ExtractionModelMetadata' }
+        validation_errors: { type: array, items: { type: string } }
+    ExtractionRunView:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          job_id,
+          workspace_id,
+          source_version_id,
+          schema_version_id,
+          sensitive_rule_template_version_id,
+          status,
+          result,
+          failure_code,
+          created_at,
+          completed_at,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        job_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        source_version_id: { type: string, format: uuid }
+        schema_version_id: { type: string, format: uuid }
+        sensitive_rule_template_version_id: { type: [string, 'null'], format: uuid }
+        status: { enum: [queued, running, review_required, approved, failed, retrying] }
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/ExtractionResultView'
+            - type: 'null'
+        failure_code: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+        completed_at: { type: [string, 'null'], format: date-time }
+    ReviewExtractionFieldRequest:
+      type: object
+      additionalProperties: false
+      required: [action, value, reason]
+      properties:
+        action: { enum: [accept, modify, reject] }
+        value: true
+        reason: { type: [string, 'null'] }
+    ApproveExtractionRequest:
+      type: object
+      additionalProperties: false
+      required: [note]
+      properties:
+        note: { type: [string, 'null'] }
+    CreateTemplateRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+    AcceptedTemplateJob:
+      type: object
+      additionalProperties: false
+      required: [job_id, template_id, request_id]
+      properties:
+        job_id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        request_id: { type: string, format: uuid }
+    DocumentTemplate:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          workspace_id,
+          source_document_id,
+          source_version_id,
+          conversion_job_id,
+          name,
+          current_version_id,
+          conversion_status,
+          failure_code,
+          created_at,
+          created_by,
+          updated_at,
+          updated_by,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        source_document_id: { type: string, format: uuid }
+        source_version_id: { type: string, format: uuid }
+        conversion_job_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        current_version_id: { type: [string, 'null'], format: uuid }
+        conversion_status: { enum: [queued, running, ready, retrying, failed] }
+        failure_code: { type: [string, 'null'], maxLength: 100 }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        updated_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid }
+    CreateTemplateVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [base_version_id, document_model, change_summary]
+      properties:
+        base_version_id: { type: string, format: uuid }
+        document_model: { type: object, additionalProperties: true }
+        change_summary: { type: string, minLength: 1, maxLength: 1000 }
+    SafeHtmlDocument:
+      type: object
+      additionalProperties: false
+      required: [html, css, sanitization_policy_version]
+      properties:
+        html: { type: string }
+        css: { type: string }
+        sanitization_policy_version: { type: string, minLength: 1 }
+    TemplateResource:
+      type: object
+      additionalProperties: false
+      required: [id, kind, content_type, byte_size, sha256, download_url]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { enum: [image, stylesheet, font, attachment] }
+        content_type: { type: string, minLength: 1, maxLength: 100 }
+        byte_size: { type: integer, minimum: 0 }
+        sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        download_url: { type: string, minLength: 1 }
+    ConversionWarning:
+      type: object
+      additionalProperties: false
+      required: [id, severity, code, message, source_node_id, page_number, fallback, blocking]
+      properties:
+        id: { type: string, format: uuid }
+        severity: { enum: [info, warning, error] }
+        code: { type: string, minLength: 1, maxLength: 100 }
+        message: { type: string, minLength: 1, maxLength: 2000 }
+        source_node_id: { type: [string, 'null'], maxLength: 255 }
+        page_number: { type: [integer, 'null'], minimum: 1 }
+        fallback: { type: [string, 'null'], maxLength: 1000 }
+        blocking: { type: boolean }
+    ControlledDocumentDiff:
+      type: object
+      additionalProperties: false
+      required: [version, truncated, changes]
+      properties:
+        version: { const: '1.0' }
+        truncated: { type: boolean }
+        changes:
+          type: array
+          maxItems: 10000
+          items:
+            type: object
+            additionalProperties: false
+            required: [path, kind, before, after]
+            properties:
+              path: { type: string }
+              kind: { enum: [added, removed, changed] }
+              before: true
+              after: true
+    DocumentTemplateVersion:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          template_id,
+          workspace_id,
+          source_version_id,
+          parsed_content_id,
+          version_number,
+          status,
+          document,
+          document_model,
+          resources,
+          warnings,
+          change_summary,
+          diff,
+          created_at,
+          created_by,
+          published_at,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        template_id: { type: string, format: uuid }
+        workspace_id: { type: string, format: uuid }
+        source_version_id: { type: string, format: uuid }
+        parsed_content_id: { type: string, format: uuid }
+        version_number: { type: integer, minimum: 1 }
+        status: { enum: [generated, checking, published, superseded] }
+        document: { $ref: '#/components/schemas/SafeHtmlDocument' }
+        document_model: { type: object, additionalProperties: true }
+        resources:
+          type: array
+          items: { $ref: '#/components/schemas/TemplateResource' }
+        warnings:
+          type: array
+          items: { $ref: '#/components/schemas/ConversionWarning' }
+        change_summary: { type: string, maxLength: 1000 }
+        diff: { $ref: '#/components/schemas/ControlledDocumentDiff' }
+        created_at: { type: string, format: date-time }
+        created_by: { type: string, format: uuid }
+        published_at: { type: [string, 'null'], format: date-time }
+    DocumentTemplateDetail:
+      type: object
+      additionalProperties: false
+      required: [template, current_version, versions]
+      properties:
+        template: { $ref: '#/components/schemas/DocumentTemplate' }
+        current_version:
+          oneOf:
+            - $ref: '#/components/schemas/DocumentTemplateVersion'
+            - type: 'null'
+        versions:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentTemplateVersion' }
+    PublishTemplateVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [note]
+      properties:
+        note: { type: [string, 'null'], maxLength: 2000 }
+    RollbackTemplateRequest:
+      type: object
+      additionalProperties: false
+      required: [target_version_id, change_summary]
+      properties:
+        target_version_id: { type: string, format: uuid }
+        change_summary: { type: string, minLength: 1, maxLength: 1000 }
+    DocumentInstance:
+      type: object
+      required: [id, template_version_id, name, status, current_version_id]
+      properties:
+        id: { type: string, format: uuid }
+        template_version_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1 }
+        status: { type: string, enum: [draft, editing, saved, submitted, archived] }
+        current_version_id: { type: [string, 'null'], format: uuid }
+    CreateDocumentInstanceRequest:
+      type: object
+      required: [name, initial_data]
+      properties:
+        name: { type: string, minLength: 1 }
+        initial_data: { type: object, additionalProperties: true }
+    SaveDocumentInstanceRequest:
+      type: object
+      required: [document, data, change_summary]
+      properties:
+        document:
+          $ref: '#/components/schemas/SafeHtmlDocument'
+        data: { type: object, additionalProperties: true }
+        change_summary: { type: string }
+    TextAnchor:
+      type: object
+      required: [node_id, start_offset, end_offset, quote, prefix, suffix]
+      properties:
+        node_id: { type: string }
+        start_offset: { type: integer, minimum: 0 }
+        end_offset: { type: integer, minimum: 0 }
+        quote: { type: string }
+        prefix: { type: string }
+        suffix: { type: string }
+    CreateCommentThreadRequest:
+      type: object
+      required: [anchor, body]
+      properties:
+        anchor: { $ref: '#/components/schemas/TextAnchor' }
+        body: { type: string, minLength: 1 }
+    DocumentRef:
+      oneOf:
+        - type: object
+          required: [kind, source_version_id]
+          properties:
+            kind: { const: source_version }
+            source_version_id: { type: string, format: uuid }
+        - type: object
+          required: [kind, template_version_id]
+          properties:
+            kind: { const: template_version }
+            template_version_id: { type: string, format: uuid }
+        - type: object
+          required: [kind, instance_version_id]
+          properties:
+            kind: { const: instance_version }
+            instance_version_id: { type: string, format: uuid }
+    CreateDiffRunRequest:
+      type: object
+      required: [baseline, target]
+      properties:
+        baseline: { $ref: '#/components/schemas/DocumentRef' }
+        target: { $ref: '#/components/schemas/DocumentRef' }
+    ApiError:
+      type: object
+      required: [code, message, request_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Standard API error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

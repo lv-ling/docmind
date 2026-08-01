@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docmind.local/schemas/domain-event.schema.json",
+  "title": "DomainEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "specversion",
+    "id",
+    "type",
+    "source",
+    "subject",
+    "time",
+    "datacontenttype",
+    "data",
+    "workspace_id",
+    "aggregate_id",
+    "schema_version",
+    "idempotency_key"
+  ],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "type": {
+      "enum": [
+        "source.version.created",
+        "extraction.completed",
+        "template.generated",
+        "template.version.published",
+        "instance.lock.acquired",
+        "instance.saved",
+        "instance.submitted",
+        "instance.lock.released",
+        "comment.thread.created",
+        "proofreading.completed",
+        "diff.completed"
+      ]
+    },
+    "source": { "type": "string", "minLength": 1 },
+    "subject": { "type": "string", "minLength": 1 },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "data": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_version_id"],
+          "properties": { "source_version_id": { "type": "string", "format": "uuid" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["extraction_run_id", "status"],
+          "properties": {
+            "extraction_run_id": { "type": "string", "format": "uuid" },
+            "status": { "enum": ["review_required", "approved", "failed"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["template_version_id"],
+          "properties": { "template_version_id": { "type": "string", "format": "uuid" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["instance_id", "holder_id"],
+          "properties": {
+            "instance_id": { "type": "string", "format": "uuid" },
+            "holder_id": { "type": "string", "format": "uuid" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["instance_id", "revision"],
+          "properties": {
+            "instance_id": { "type": "string", "format": "uuid" },
+            "revision": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["comment_thread_id"],
+          "properties": { "comment_thread_id": { "type": "string", "format": "uuid" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["proofreading_run_id"],
+          "properties": { "proofreading_run_id": { "type": "string", "format": "uuid" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["diff_run_id"],
+          "properties": { "diff_run_id": { "type": "string", "format": "uuid" } }
+        }
+      ]
+    },
+    "workspace_id": { "type": "string", "format": "uuid" },
+    "aggregate_id": { "type": "string", "minLength": 1 },
+    "schema_version": { "type": "string", "minLength": 1 },
+    "idempotency_key": { "type": ["string", "null"], "maxLength": 128 }
+  }
+}

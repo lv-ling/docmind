@@ -1,0 +1,2 @@
+[console_scripts]
+docmind-ai = docmind_ai.main:run

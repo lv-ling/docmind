@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: docmind-api
+  profiles:
+    default: local
+  jackson:
+    default-property-inclusion: non_null
+    property-naming-strategy: SNAKE_CASE
+    time-zone: UTC
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: ${DOCMIND_API_PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: 0.1.0
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+docmind:
+  jobs:
+    enabled: ${DOCMIND_JOBS_ENABLED:true}
+    dispatcher-enabled: ${DOCMIND_JOB_DISPATCHER_ENABLED:true}
+    consumer-enabled: ${DOCMIND_JOB_CONSUMER_ENABLED:true}
+    exchange: ${DOCMIND_JOB_EXCHANGE:docmind.jobs.v1}
+    routing-key: ${DOCMIND_JOB_ROUTING_KEY:jobs.execute}
+    queue: ${DOCMIND_JOB_QUEUE:docmind.jobs.execute.v1}
+    dead-letter-exchange: ${DOCMIND_JOB_DLX:docmind.jobs.dead-letter.v1}
+    dead-letter-routing-key: ${DOCMIND_JOB_DLQ_ROUTING_KEY:jobs.dead}
+    dead-letter-queue: ${DOCMIND_JOB_DLQ:docmind.jobs.dead-letter.v1}
+    dispatch-initial-delay: ${DOCMIND_JOB_DISPATCH_INITIAL_DELAY:PT5S}
+    dispatch-interval: ${DOCMIND_JOB_DISPATCH_INTERVAL:PT2S}
+    publish-confirm-timeout: ${DOCMIND_JOB_CONFIRM_TIMEOUT:PT3S}
+    publish-lease: ${DOCMIND_JOB_PUBLISH_LEASE:PT30S}
+    publish-retry-delay: ${DOCMIND_JOB_PUBLISH_RETRY_DELAY:PT5S}
+    worker-lease: ${DOCMIND_JOB_WORKER_LEASE:PT2M}
+    recovery-interval: ${DOCMIND_JOB_RECOVERY_INTERVAL:PT30S}
+    retry-initial-delay: ${DOCMIND_JOB_RETRY_INITIAL_DELAY:PT5S}
+    retry-max-delay: ${DOCMIND_JOB_RETRY_MAX_DELAY:PT5M}
+    retry-multiplier: ${DOCMIND_JOB_RETRY_MULTIPLIER:2.0}
+    dispatch-batch-size: ${DOCMIND_JOB_DISPATCH_BATCH_SIZE:50}
+    consumer-prefetch: ${DOCMIND_JOB_CONSUMER_PREFETCH:4}

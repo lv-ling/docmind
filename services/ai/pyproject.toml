@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docmind-ai"
+version = "0.1.0"
+description = "DocMind deterministic parsing, PII tokenization, and schema extraction service"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "email-validator==2.3.0",
+  "fastapi==0.136.1",
+  "google-re2==1.1.20251105",
+  "httpx2==2.7.0",
+  "jsonschema==4.26.0",
+  "langchain-core==1.4.9",
+  "langgraph==1.2.9",
+  "pdfplumber==0.11.10",
+  "phonenumbers==9.0.34",
+  "presidio-analyzer==2.2.363",
+  "pydantic==2.13.3",
+  "python-docx==1.2.0",
+  "python-multipart==0.0.32",
+  "structlog==25.5.0",
+  "uvicorn[standard]==0.46.0",
+]
+
+[dependency-groups]
+dev = [
+  "mypy==2.3.0",
+  "pytest==9.0.3",
+  "ruff==0.16.1",
+]
+
+[project.scripts]
+docmind-ai = "docmind_ai.main:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+docmind_ai = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers -q"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["A", "ASYNC", "B", "E", "F", "I", "N", "RUF", "S", "SIM", "UP"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["RUF001", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+packages = ["docmind_ai"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
