@@ -1,35 +1,60 @@
 # 本地基础设施
 
-启动：
+> 导航：[仓库首页](../../README.md) / [部署](../README.md) / Compose
+
+本目录为本地开发提供 PostgreSQL、Redis、RabbitMQ 和 MinIO，并通过可选 `editor` profile 提供 ONLYOFFICE Docs。Compose 镜像使用固定摘要，端口只绑定到 `127.0.0.1`。
+
+## 服务清单
+
+| 服务 | 默认地址 | 用途 |
+| --- | --- | --- |
+| PostgreSQL | `127.0.0.1:5432` | 业务数据与任务状态 |
+| Redis | `127.0.0.1:6379` | 缓存和短期协调状态 |
+| RabbitMQ | `127.0.0.1:5672` | 异步任务消息；管理台为 `15672` |
+| MinIO | `127.0.0.1:9000` | 原件、预览、模板和导出对象；控制台为 `9001` |
+| ONLYOFFICE Docs | `127.0.0.1:8082` | 可选原生 DOCX 编辑 POC |
+
+默认账号、密码和连接命令见[容器访问手册](ACCESS.md)。
+
+## 日常操作
+
+推荐从仓库根目录使用统一脚本；`start` 会等待四项基础服务健康，并以一次性任务幂等创建 MinIO bucket。
 
 ```bash
-docker compose -f deploy/compose/docker-compose.yml up -d
+pnpm infra:start
+pnpm infra:status
+pnpm infra:logs
+pnpm infra:stop
 ```
 
-日常操作也可以使用项目脚本：`./scripts/dev/infra.sh start`、`stop`、`restart`、`status`。
+Compose 配置发生变化后执行 `pnpm infra:recreate`，它重建容器并重新确认 bucket，但不会删除数据卷。查看单个服务日志可使用 `./scripts/dev/infra.sh logs <service>`。
 
-原生 DOCX 编辑 POC 使用可选的 ONLYOFFICE Docs 9.4.0，不随基础依赖自动启动：
+## 本地配置
+
+默认值定义在 `docker-compose.yml` 和 [`.env.example`](.env.example) 中。如需覆盖，复制为本目录下的 `.env`：
+
+```bash
+cp deploy/compose/.env.example deploy/compose/.env
+```
+
+脚本会自动加载该文件。`.env` 已被 Git 忽略；其中的默认密码只适用于单机开发，不能用于共享测试或生产环境。PostgreSQL 和 RabbitMQ 的初始化凭据写入数据卷后，修改 `.env` 不会自动迁移已有账号。
+
+## 可选 ONLYOFFICE
 
 ```bash
 ./scripts/dev/infra.sh editor-start
+./scripts/dev/infra.sh editor-status
+./scripts/dev/infra.sh editor-logs
+./scripts/dev/infra.sh editor-stop
 ```
 
-首次启动需要下载约 1.2 GB 的官方镜像并等待编辑服务初始化。状态、日志和停止命令分别是 `editor-status`、`editor-logs`、`editor-stop`。浏览器访问地址默认为 `http://127.0.0.1:8082`；Document Server 通过 `host.docker.internal:8080` 读取 API 受控文件并回调保存。Apple Silicon 和 x86_64 使用同一个固定的多架构镜像摘要。
+首次启动需要下载较大的官方镜像并等待初始化。Document Server 通过 `host.docker.internal:8080` 读取 API 受控文件并回调保存；服务间使用本地示例 JWT，生产环境必须替换。
 
-高保真分页依赖编辑器和渲染器使用同一组合法字体。仓库不提交字体二进制；请将获授权字体放入 `deploy/onlyoffice/fonts`，或在 `deploy/compose/.env` 通过 `DOCMIND_ONLYOFFICE_FONT_DIR` 指向本机合法字体目录。变更字体后执行 `./scripts/dev/infra.sh editor-fonts` 重建字体索引并重启编辑服务。缺少文档要求的字体时必须视为还原度告警，不能静默通过 G0。
+高保真分页要求编辑器与 PDF 渲染器使用同一组合法字体。将授权字体放入 [`deploy/onlyoffice/fonts`](../onlyoffice/fonts/README.md)，或用 `DOCMIND_ONLYOFFICE_FONT_DIR` 指向本机目录；字体变化后执行 `./scripts/dev/infra.sh editor-fonts` 重建索引。字体缺失或替代必须作为还原度告警处理。
 
-每个容器的浏览器、命令行和应用连接方式见 [容器访问手册](ACCESS.md)。
+## 数据安全
 
-需要应用 Compose 配置变更时使用 `./scripts/dev/infra.sh recreate`，它只重建容器，不删除数据卷。复制 `.env.example` 为 `.env` 可以覆盖本地端口或密码；PostgreSQL/RabbitMQ 的初始化密码在已有数据卷上不会自动修改。
-
-服务地址：
-
-| 服务 | 地址 | 开发账号 |
-| --- | --- | --- |
-| PostgreSQL | `localhost:5432` | `docmind / 12345678`，数据库 `docmind` |
-| Redis | `localhost:6379` | 密码 `12345678` |
-| RabbitMQ | `localhost:5672`，管理台 `http://localhost:15672` | `docmind / 12345678` |
-| MinIO | API `http://localhost:9000`，控制台 `http://localhost:9001` | `minioadmin / 12345678` |
-| ONLYOFFICE Docs（可选） | `http://127.0.0.1:8082` | JWT 服务间认证，无交互账号 |
-
-所有本地服务统一使用开发密码 `12345678`。脚本启动时会通过一次性任务自动创建 `docmind-sources`、`docmind-previews`、`docmind-templates`、`docmind-exports` 四个 MinIO bucket；任务成功后自动删除，不会在 Docker Desktop 留下停止的初始化容器。这些凭据与仓库中的 ONLYOFFICE JWT 示例密钥仅限本地开发，禁止用于共享测试或生产环境。停止但保留数据：`docker compose -f deploy/compose/docker-compose.yml stop`；删除容器和本地卷前请确认数据不再需要。
+- `stop` 只停止容器并保留数据卷。
+- `recreate` 只重建容器，不删除数据卷。
+- `docker compose down -v` 会删除本地数据库、队列和对象数据，执行前必须确认不再需要。
+- 本地凭据、ONLYOFFICE JWT 和端口配置不得复用于共享或生产环境。

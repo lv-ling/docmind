@@ -15,7 +15,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from create_e2e_docx import build
+from fixtures.create_e2e_docx import build
 
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 

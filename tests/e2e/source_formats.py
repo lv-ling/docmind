@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify DOC, DOCX and PDF source upload/preview against local infrastructure."""
+"""Verify DOC, DOCX and PDF source upload/preview across local services."""
 
 from __future__ import annotations
 

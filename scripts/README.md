@@ -1,50 +1,22 @@
-# 脚本目录
+# 工程脚本
 
-存放本地开发、数据库迁移辅助、契约生成、质量检查、脱敏测试集和评测任务入口。脚本应幂等、显式接收环境参数，并避免把文档原文或敏感映射写入日志。
+> 导航：[仓库首页](../README.md) / 工程脚本
 
-建议内部结构：`dev`、`migration`、`quality`、`evaluation`。
+`scripts/` 存放本地开发和仓库维护入口。脚本应幂等、从仓库根目录定位资源、显式接收环境参数，并避免把文档原文、敏感映射或密钥写入日志。跨服务验收测试统一放在 [`tests/e2e`](../tests/e2e/README.md)。
 
-## 本地基础设施
-
-电脑重启后，先启动 Docker Desktop；等待 Docker 可用，然后在项目根目录执行：
-
-```bash
-./scripts/dev/infra.sh start
+```text
+scripts/
+├── dev/
+│   ├── ai.sh             AI 环境、服务与质量命令
+│   ├── infra.sh          Compose 基础设施和 ONLYOFFICE 操作
+│   └── README.md         开发脚本完整命令
+└── maintenance/
+    └── README.md         维护脚本准入与安全边界
 ```
 
-脚本会启动 PostgreSQL、Redis、RabbitMQ、MinIO，等待健康检查通过，并通过一次性任务确保 MinIO bucket 已创建。
+## 入口导航
 
-### 常用命令
+- [开发脚本](dev/README.md)：AI 同步、开发服务、检查，以及基础设施启停、日志和编辑服务操作。
+- [维护脚本](maintenance/README.md)：仓库清理和一致性检查脚本的放置规则；当前没有自动清理实现。
 
-```bash
-# 启动并等待服务健康
-./scripts/dev/infra.sh start
-
-# 查看容器状态
-./scripts/dev/infra.sh status
-
-# 停止容器但保留数据卷
-./scripts/dev/infra.sh stop
-
-# 重启已有容器
-./scripts/dev/infra.sh restart
-
-# Compose 配置变更后强制重建容器，不删除数据卷
-./scripts/dev/infra.sh recreate
-
-# 查看全部日志
-./scripts/dev/infra.sh logs
-
-# 查看单个服务日志，例如 MinIO
-./scripts/dev/infra.sh logs minio
-```
-
-### 操作顺序
-
-1. 启动 Docker Desktop。
-2. 进入项目目录：`cd /Users/lvling/learn/docmind`。
-3. 执行 `./scripts/dev/infra.sh start`。
-4. 执行 `./scripts/dev/infra.sh status`，确认四个服务均为 `healthy`。
-5. 开发结束后可执行 `./scripts/dev/infra.sh stop`。
-
-不要执行 `docker compose down -v`，除非明确需要删除 PostgreSQL、Redis、RabbitMQ 和 MinIO 的本地数据。完整账号、端口和启动流程见 [本地基础设施文档](../docs/development/01-本地基础设施.md)，具体连接命令见 [容器访问手册](../deploy/compose/ACCESS.md)。
+根目录 `package.json` 为常用操作提供 `ai:*`、`infra:*`、`api:*` 和 `e2e:*` 别名。README 应说明“何时使用”，脚本自身的 `usage` 输出负责列出可执行参数，两者需要保持同步。

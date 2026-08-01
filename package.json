@@ -37,9 +37,9 @@
     "infra:recreate": "./scripts/dev/infra.sh recreate",
     "infra:status": "./scripts/dev/infra.sh status",
     "infra:logs": "./scripts/dev/infra.sh logs",
-    "e2e:mvp": "services/ai/.venv/bin/python scripts/dev/e2e_template_flow.py",
+    "e2e:mvp": "services/ai/.venv/bin/python tests/e2e/template_flow.py",
     "e2e:templates": "pnpm run e2e:mvp",
-    "e2e:source-formats": "python3 scripts/dev/e2e_source_formats.py"
+    "e2e:source-formats": "python3 tests/e2e/source_formats.py"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

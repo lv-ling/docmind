@@ -1,11 +1,24 @@
 # 容器访问手册
 
+> 导航：[仓库首页](../../README.md) / [部署](../README.md) / [Compose](README.md) / 容器访问
+
+本文列出仓库内置的本地开发默认值。若已创建 `deploy/compose/.env`，应以覆盖后的端口和凭据为准；这些默认密码不能用于共享测试或生产环境。
+
 使用前确认 Docker Desktop 已运行，并在项目根目录启动服务：
 
 ```bash
 ./scripts/dev/infra.sh start
 ./scripts/dev/infra.sh status
 ```
+
+## 默认地址速查
+
+| 服务 | 地址 | 默认身份 |
+| --- | --- | --- |
+| PostgreSQL | `127.0.0.1:5432/docmind` | `docmind / 12345678` |
+| Redis | `127.0.0.1:6379` | 密码 `12345678` |
+| RabbitMQ | `127.0.0.1:5672`，管理台 `15672` | `docmind / 12345678` |
+| MinIO | API `127.0.0.1:9000`，控制台 `9001` | `minioadmin / 12345678` |
 
 ## PostgreSQL
 
@@ -110,5 +123,4 @@ docker exec docmind-minio mc ls local
 ./scripts/dev/infra.sh logs minio
 ```
 
-这些账号密码仅供本地开发。端口只绑定 `127.0.0.1`，不能从其他电脑直接访问。不要使用 `docker compose down -v`，否则会删除本地数据卷。
-
+这些账号密码仅供本地开发。端口只绑定 `127.0.0.1`，不能从其他电脑直接访问。不要使用 `docker compose down -v`，否则会删除本地数据卷。启停、配置覆盖和 ONLYOFFICE 操作见[本地基础设施说明](README.md)。

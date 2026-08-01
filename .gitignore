@@ -46,6 +46,7 @@ hs_err_pid*
 # Python
 __pycache__/
 *.py[cod]
+*.egg-info/
 .venv/
 venv/
 .pytest_cache/

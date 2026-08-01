@@ -1,6 +1,28 @@
 # 业务 API
 
-Java 17 + Spring Boot 3 业务服务。负责工作区和权限、原件/模板/实例生命周期、上传会话、敏感信息令牌化与回填、异步任务编排、编辑租约、审计和对外 API。
+> 导航：[仓库首页](../../README.md) / [服务层](../README.md) / 业务 API
+
+`docmind-api` 是 Java 17 + Spring Boot 3.5 业务服务，是身份、工作区、权限、业务数据和敏感映射的访问边界。当前实现覆盖身份与工作区、原件、Schema、敏感规则、抽取、模板、异步任务、审计和基础设施适配；实例、协作和校对等后续领域以 OpenAPI 目标契约为准。
+
+## 代码结构
+
+```text
+services/api/
+├── src/main/java/com/docmind/api/
+│   ├── identity/         身份、工作区、成员和 JWT
+│   ├── source/           原件上传、版本和预览
+│   ├── schema/           字段 Schema 与模板
+│   ├── sensitive/        敏感规则模板
+│   ├── extraction/       抽取、复核、AI 客户端和异步任务
+│   ├── template/         受控模板、转换、版本和 Diff
+│   ├── audit/            安全审计记录
+│   ├── infrastructure/   加密与对象存储适配
+│   └── shared/           跨领域错误和 Web 基础能力
+├── src/main/resources/
+│   ├── db/migration/     Flyway 不可变迁移
+│   └── application*.yml  默认与本地配置
+└── src/test/             单元、契约和集成测试
+```
 
 ## 本地运行
 
@@ -119,6 +141,8 @@ pnpm e2e:mvp
 
 ## 模块边界
 
-后续代码按领域组织为 `source`、`extraction`、`template`、`instance`、`collaboration`、`diff`、`identity`、`audit`，避免只按 controller/service/repository 技术层平铺。跨领域通用的 Web 和错误处理放在 `shared`，数据库、消息队列和对象存储适配器放在 `infrastructure`。
+当前代码按 `identity`、`source`、`schema`、`sensitive`、`extraction`、`template` 和 `audit` 领域组织，每个领域再按 API、应用、领域和基础设施职责分层。后续 `instance`、`collaboration`、`proofreading` 和独立 `diff` 能力沿用同一模式，避免按 controller/service/repository 在全仓库平铺。跨领域通用的 Web 和错误处理放在 `shared`，加密、消息队列和对象存储适配器放在 `infrastructure` 或所属领域的基础设施层。
 
 数据库和对象存储只由本服务或其受控 Worker 访问；AI 服务不能绕过本服务读取租户数据。
+
+相关入口：[跨端契约](../../packages/contracts/README.md)、[AI 服务](../ai/README.md)、[本地基础设施](../../deploy/compose/README.md)、[跨服务验收](../../tests/e2e/README.md)。

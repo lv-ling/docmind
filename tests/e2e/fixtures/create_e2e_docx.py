@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create the deterministic DOCX fixture used by the real-infrastructure smoke test."""
+"""Create the deterministic DOCX fixture used by the cross-service acceptance test."""
 
 from __future__ import annotations
 
