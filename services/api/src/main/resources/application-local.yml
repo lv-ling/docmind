@@ -23,6 +23,9 @@ spring:
     connection-timeout: 3s
 
 docmind:
+  native-editor:
+    enabled: ${DOCMIND_NATIVE_EDITOR_ENABLED:true}
+    jwt-secret: ${DOCMIND_ONLYOFFICE_JWT_SECRET:local-only-docmind-onlyoffice-jwt-secret-change-before-production}
   ai:
     enabled: ${DOCMIND_AI_ENABLED:true}
     base-url: ${DOCMIND_AI_BASE_URL:http://127.0.0.1:8090}

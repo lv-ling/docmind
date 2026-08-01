@@ -39,7 +39,11 @@ public class SecurityConfiguration {
             requests ->
                 requests
                     .requestMatchers(
-                        "/api/v1/auth/login", "/actuator/health/**", "/actuator/info")
+                        "/api/v1/auth/login",
+                        "/api/v1/template-editor-sessions/*/content",
+                        "/api/v1/integrations/onlyoffice/callback/*",
+                        "/actuator/health/**",
+                        "/actuator/info")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

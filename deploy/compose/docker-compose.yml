@@ -86,8 +86,47 @@ services:
         mc mb --ignore-existing local/docmind-exports
     restart: "no"
 
+  onlyoffice:
+    image: onlyoffice/documentserver@sha256:e3da62a847b9a5d51a11f73cfea1d9c13c3be3809614490d4edddcf01dcf919b
+    container_name: docmind-onlyoffice
+    profiles: ["editor"]
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: ${DOCMIND_ONLYOFFICE_JWT_SECRET:-local-only-docmind-onlyoffice-jwt-secret-change-before-production}
+      JWT_HEADER: ${DOCMIND_ONLYOFFICE_JWT_HEADER:-AuthorizationJwt}
+      JWT_IN_BODY: "false"
+      ALLOW_PRIVATE_IP_ADDRESS: "true"
+      ALLOW_META_IP_ADDRESS: "false"
+      USE_UNAUTHORIZED_STORAGE: "false"
+      EXAMPLE_ENABLED: "false"
+      PLUGINS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:${DOCMIND_ONLYOFFICE_PORT:-8082}:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - docmind-onlyoffice-data:/var/www/onlyoffice/Data
+      - docmind-onlyoffice-lib:/var/lib/onlyoffice
+      - docmind-onlyoffice-logs:/var/log/onlyoffice
+      # The repository directory is intentionally empty of font binaries. Override the
+      # host path with a legally licensed font directory when fidelity tests need it.
+      - ${DOCMIND_ONLYOFFICE_FONT_DIR:-../onlyoffice/fonts}:/usr/share/fonts/truetype/docmind-custom:ro
+    shm_size: "2gb"
+    mem_limit: "4g"
+    cpus: 2
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+    restart: unless-stopped
+
 volumes:
   docmind-postgres:
   docmind-redis:
   docmind-rabbitmq:
   docmind-minio:
+  docmind-onlyoffice-data:
+  docmind-onlyoffice-lib:
+  docmind-onlyoffice-logs:

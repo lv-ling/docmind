@@ -33,6 +33,33 @@ export const createTemplate = (
 export const getTemplate = (templateId: TemplateId): Promise<TemplateDetail> =>
   apiRequest(`/api/v1/templates/${templateId}`);
 
+export interface NativeEditorSession {
+  session_id: string;
+  editor_url: string;
+  editor_config: Record<string, unknown>;
+  expires_at: string;
+}
+
+export interface NativeEditorSessionStatus {
+  session_id: string;
+  template_id: string;
+  status: string;
+  expires_at: string;
+  last_callback_status: number | null;
+  callback_count: number;
+  saved_sha256: string | null;
+  saved_size_bytes: number | null;
+  saved_at: string | null;
+}
+
+export const createNativeEditorSession = (templateId: TemplateId): Promise<NativeEditorSession> =>
+  apiRequest(`/api/v1/templates/${templateId}/editor-sessions`, { method: 'POST' });
+
+export const getNativeEditorSessionStatus = (
+  sessionId: string,
+): Promise<NativeEditorSessionStatus> =>
+  apiRequest(`/api/v1/template-editor-sessions/${sessionId}`);
+
 export const createTemplateVersion = (
   templateId: TemplateId,
   request: CreateTemplateVersionRequest,

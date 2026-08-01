@@ -234,12 +234,21 @@
   overflow: auto;
 }
 
+.dm-split-pane__panel--left {
+  grid-column: 1;
+}
+
 .dm-split-pane__divider {
   z-index: 1;
+  grid-column: 2;
   display: grid;
   grid-template-rows: 2.25rem minmax(3rem, 1fr) 2.25rem;
   border-inline: 1px solid var(--dm-color-border);
   background: var(--dm-color-paper-muted);
+}
+
+.dm-split-pane__panel--right {
+  grid-column: 3;
 }
 
 .dm-split-pane__separator {

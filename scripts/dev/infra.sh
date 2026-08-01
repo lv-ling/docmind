@@ -31,6 +31,21 @@ wait_for_health() {
   return 1
 }
 
+wait_for_editor_health() {
+  local deadline=$((SECONDS + 240))
+  local status
+  while (( SECONDS < deadline )); do
+    status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' docmind-onlyoffice 2>/dev/null || true)"
+    if [[ "$status" == "healthy" ]]; then
+      return 0
+    fi
+    sleep 3
+  done
+  echo "Timed out waiting for ONLYOFFICE health check." >&2
+  "${compose[@]}" --profile editor ps onlyoffice
+  return 1
+}
+
 run_minio_init() {
   "${compose[@]}" --profile init run --rm --no-deps minio-init
 }
@@ -66,8 +81,28 @@ case "${1:-status}" in
       "${compose[@]}" logs -f
     fi
     ;;
+  editor-start)
+    "${compose[@]}" --profile editor up -d onlyoffice
+    wait_for_editor_health
+    "${compose[@]}" --profile editor ps onlyoffice
+    ;;
+  editor-stop)
+    "${compose[@]}" --profile editor stop onlyoffice
+    ;;
+  editor-status)
+    "${compose[@]}" --profile editor ps onlyoffice
+    ;;
+  editor-fonts)
+    "${compose[@]}" --profile editor exec -T onlyoffice documentserver-generate-allfonts.sh
+    "${compose[@]}" --profile editor restart onlyoffice
+    wait_for_editor_health
+    "${compose[@]}" --profile editor ps onlyoffice
+    ;;
+  editor-logs)
+    "${compose[@]}" --profile editor logs -f onlyoffice
+    ;;
   *)
-    echo "Usage: $0 {start|stop|restart|recreate|status|logs [service]}" >&2
+    echo "Usage: $0 {start|stop|restart|recreate|status|logs [service]|editor-start|editor-stop|editor-status|editor-fonts|editor-logs}" >&2
     exit 2
     ;;
 esac

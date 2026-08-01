@@ -18,11 +18,15 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getSourcePreview } from '../api/sources.js';
 import {
+  createNativeEditorSession,
   createTemplateVersion,
   getAuthenticatedObjectUrl,
+  getNativeEditorSessionStatus,
   getTemplate,
   publishTemplateVersion,
   rollbackTemplate,
+  type NativeEditorSession,
+  type NativeEditorSessionStatus,
 } from '../api/templates.js';
 import InlineNotice from '../components/InlineNotice.vue';
 import { useAuthStore } from '../stores/auth.js';
@@ -57,6 +61,11 @@ const error = ref('');
 const notice = ref('');
 const dirty = ref(false);
 const editMode = ref(false);
+const nativeMode = ref(false);
+const nativeLoading = ref(false);
+const nativeSession = ref<NativeEditorSession | null>(null);
+const nativeStatus = ref<NativeEditorSessionStatus | null>(null);
+const nativeEditorHost = ref<HTMLDivElement | null>(null);
 const changeSummary = ref('调整模板文字与版式');
 const split = ref(48);
 const leftCollapsed = ref(false);
@@ -69,6 +78,8 @@ const rightFrame = ref<HTMLIFrameElement | null>(null);
 const resourceUrls = ref<string[]>([]);
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let nativeStatusTimer: ReturnType<typeof setTimeout> | null = null;
+let nativeEditor: OnlyOfficeEditorInstance | null = null;
 
 const layoutStorageKey = computed(
   () => `docmind.template-split.${auth.user?.id ?? 'anonymous'}.${route.params.workspaceId}`,
@@ -86,6 +97,10 @@ const blockingWarnings = computed(
 );
 const pageCount = computed(
   () => originalPreview.value?.preview.page_count ?? draft.value?.metadata.source_page_count ?? 1,
+);
+
+const nativeEditorHostId = computed(
+  () => `docmind-native-editor-${templateId.value.replaceAll(/[^a-zA-Z0-9_-]/g, '-')}`,
 );
 
 const isRecord = (value: unknown): value is MutableNode =>
@@ -289,7 +304,115 @@ const revokeResources = (): void => {
   resourceUrls.value = [];
 };
 
+const destroyNativeEditor = (): void => {
+  if (nativeStatusTimer !== null) {
+    clearTimeout(nativeStatusTimer);
+    nativeStatusTimer = null;
+  }
+  nativeEditor?.destroyEditor();
+  nativeEditor = null;
+};
+
+const loadOnlyOfficeScript = async (editorUrl: string): Promise<void> => {
+  if (window.DocsAPI !== undefined) return;
+  const source = `${editorUrl.replace(/\/$/, '')}/web-apps/apps/api/documents/api.js`;
+  const existing = document.querySelector<HTMLScriptElement>('script[data-docmind-onlyoffice]');
+  if (existing !== null) {
+    await new Promise<void>((resolve, reject) => {
+      if (window.DocsAPI !== undefined) {
+        resolve();
+        return;
+      }
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('ONLYOFFICE SDK 加载失败')), {
+        once: true,
+      });
+    });
+    return;
+  }
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = source;
+    script.async = true;
+    script.dataset.docmindOnlyoffice = 'true';
+    script.addEventListener('load', () => resolve(), { once: true });
+    script.addEventListener(
+      'error',
+      () => {
+        script.remove();
+        reject(new Error('ONLYOFFICE SDK 加载失败，请确认原生编辑服务已启动'));
+      },
+      { once: true },
+    );
+    document.head.append(script);
+  });
+  if (window.DocsAPI === undefined) throw new Error('ONLYOFFICE SDK 未提供 DocsAPI');
+};
+
+const scheduleNativeStatusRefresh = (): void => {
+  if (nativeStatusTimer !== null) clearTimeout(nativeStatusTimer);
+  if (nativeSession.value === null) return;
+  nativeStatusTimer = setTimeout(() => void refreshNativeStatus(true), 2500);
+};
+
+const refreshNativeStatus = async (continuePolling = false): Promise<void> => {
+  if (nativeSession.value === null) return;
+  try {
+    nativeStatus.value = await getNativeEditorSessionStatus(nativeSession.value.session_id);
+  } catch (caught) {
+    const message = caught instanceof Error ? caught.message : '原生编辑保存状态读取失败';
+    if (continuePolling) {
+      destroyNativeEditor();
+      nativeSession.value = null;
+      nativeMode.value = false;
+      error.value = `原生编辑会话已中断：${message}。请重新进入原生编辑。`;
+    } else {
+      error.value = message;
+    }
+  } finally {
+    if (continuePolling && nativeMode.value) scheduleNativeStatusRefresh();
+  }
+};
+
+const startNativeEditor = async (): Promise<void> => {
+  if (!isCurrentVersion.value || nativeLoading.value) return;
+  nativeLoading.value = true;
+  error.value = '';
+  notice.value = '';
+  destroyNativeEditor();
+  nativeSession.value = null;
+  nativeStatus.value = null;
+  nativeMode.value = true;
+  editMode.value = false;
+  try {
+    await nextTick();
+    const session = await createNativeEditorSession(templateId.value);
+    nativeSession.value = session;
+    await loadOnlyOfficeScript(session.editor_url);
+    await nextTick();
+    if (nativeEditorHost.value === null || window.DocsAPI === undefined) {
+      throw new Error('原生编辑器容器初始化失败');
+    }
+    nativeEditor = new window.DocsAPI.DocEditor(nativeEditorHostId.value, session.editor_config);
+    notice.value = '原生 DOCX 编辑 POC 已打开；编辑器内保存会触发受控回调并落入独立 POC 文件。';
+    scheduleNativeStatusRefresh();
+  } catch (caught) {
+    destroyNativeEditor();
+    nativeMode.value = false;
+    error.value = caught instanceof Error ? caught.message : '原生编辑器打开失败';
+  } finally {
+    nativeLoading.value = false;
+  }
+};
+
+const stopNativeEditor = (): void => {
+  destroyNativeEditor();
+  nativeMode.value = false;
+  void refreshNativeStatus(false);
+};
+
 const prepareVersion = async (version: TemplateVersion): Promise<void> => {
+  if (nativeMode.value) stopNativeEditor();
   selectedVersionId.value = version.id;
   try {
     const model: unknown = cloneJsonValue(version.document_model);
@@ -449,6 +572,7 @@ onUnmounted(() => {
   if (refreshTimer !== null) clearTimeout(refreshTimer);
   if (previewTimer !== null) clearTimeout(previewTimer);
   if (originalObjectUrl.value !== null) URL.revokeObjectURL(originalObjectUrl.value);
+  destroyNativeEditor();
   revokeResources();
 });
 </script>
@@ -548,19 +672,31 @@ onUnmounted(() => {
 
       <section class="template-toolbar">
         <div class="mode-switch" aria-label="模板模式">
-          <button type="button" :class="{ active: !editMode }" @click="editMode = false">
+          <button
+            type="button"
+            :class="{ active: !editMode && !nativeMode }"
+            @click="((editMode = false), stopNativeEditor())"
+          >
             预览
           </button>
           <button
             type="button"
-            :class="{ active: editMode }"
+            :class="{ active: editMode && !nativeMode }"
             :disabled="!isCurrentVersion"
-            @click="editMode = true"
+            @click="(stopNativeEditor(), (editMode = true))"
           >
             微调
           </button>
+          <button
+            type="button"
+            :class="{ active: nativeMode }"
+            :disabled="!isCurrentVersion || nativeLoading"
+            @click="startNativeEditor"
+          >
+            {{ nativeLoading ? '正在启动…' : '原生编辑 POC' }}
+          </button>
         </div>
-        <label
+        <label v-if="!nativeMode"
           >缩放 <input v-model.number="zoom" type="range" min="50" max="150" step="5" /><span
             >{{ zoom }}%</span
           ></label
@@ -572,7 +708,11 @@ onUnmounted(() => {
             ›
           </button>
         </div>
-        <span class="template-save-state" :class="{ dirty }">{{
+        <span v-if="nativeMode" class="template-save-state native">
+          {{ nativeStatus?.status ?? '正在建立编辑会话' }}
+          <template v-if="nativeStatus?.saved_at">· 已收到保存回调</template>
+        </span>
+        <span v-else class="template-save-state" :class="{ dirty }">{{
           dirty ? '有未保存修改' : '版本已固化'
         }}</span>
       </section>
@@ -600,8 +740,33 @@ onUnmounted(() => {
           </section>
         </template>
         <template #right>
-          <section class="template-controlled-pane" :class="{ 'is-editing': editMode }">
-            <aside v-if="editMode" class="template-inspector">
+          <section
+            class="template-controlled-pane"
+            :class="{ 'is-editing': editMode && !nativeMode, 'is-native': nativeMode }"
+          >
+            <section v-if="nativeMode" class="native-editor-shell">
+              <header class="native-editor-session-bar">
+                <span>
+                  <small>NATIVE DOCX / ISOLATED POC</small>
+                  <strong>分页与字符级富文本编辑</strong>
+                </span>
+                <span class="native-editor-session-meta">
+                  <code>{{ nativeStatus?.status ?? 'loading' }}</code>
+                  <button type="button" @click="refreshNativeStatus(false)">检查保存</button>
+                  <button type="button" @click="stopNativeEditor">退出 POC</button>
+                </span>
+              </header>
+              <div class="native-editor-poc-note">
+                当前保存写入独立 POC 对象，不改变已发布模板版本；G0 通过后再接正式版本状态机。
+              </div>
+              <div
+                :id="nativeEditorHostId"
+                ref="nativeEditorHost"
+                class="native-editor-host"
+                aria-label="ONLYOFFICE 原生 DOCX 编辑器"
+              ></div>
+            </section>
+            <aside v-else-if="editMode" class="template-inspector">
               <header><small>CONTROLLED NODES</small><strong>结构与微调</strong></header>
               <label class="inspector-field"
                 >编辑段落
@@ -656,7 +821,7 @@ onUnmounted(() => {
                 /></label>
               </fieldset>
             </aside>
-            <div class="template-canvas">
+            <div v-if="!nativeMode" class="template-canvas">
               <iframe
                 ref="rightFrame"
                 sandbox="allow-same-origin"
@@ -664,7 +829,7 @@ onUnmounted(() => {
                 title="可编辑模板预览"
               ></iframe>
             </div>
-            <aside class="template-audit-drawer">
+            <aside v-if="!nativeMode" class="template-audit-drawer">
               <details open>
                 <summary>
                   转换告警 <strong>{{ selectedVersion.warnings.length }}</strong>

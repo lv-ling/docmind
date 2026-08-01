@@ -62,6 +62,19 @@ logging:
       console: ecs
 
 docmind:
+  native-editor:
+    enabled: ${DOCMIND_NATIVE_EDITOR_ENABLED:false}
+    document-server-public-url: ${DOCMIND_ONLYOFFICE_PUBLIC_URL:http://127.0.0.1:8082}
+    document-server-download-url: ${DOCMIND_ONLYOFFICE_DOWNLOAD_URL:http://127.0.0.1:8082}
+    application-internal-url: ${DOCMIND_ONLYOFFICE_API_INTERNAL_URL:http://host.docker.internal:8080}
+    jwt-secret: ${DOCMIND_ONLYOFFICE_JWT_SECRET:}
+    jwt-header: ${DOCMIND_ONLYOFFICE_JWT_HEADER:AuthorizationJwt}
+    session-ttl: ${DOCMIND_NATIVE_EDITOR_SESSION_TTL:2h}
+    max-file-size-bytes: ${DOCMIND_NATIVE_EDITOR_MAX_FILE_SIZE_BYTES:10485760}
+    callback-allowed-origins:
+      - ${DOCMIND_ONLYOFFICE_PUBLIC_URL:http://127.0.0.1:8082}
+      - http://localhost
+      - http://docmind-onlyoffice
   jobs:
     enabled: ${DOCMIND_JOBS_ENABLED:true}
     dispatcher-enabled: ${DOCMIND_JOB_DISPATCHER_ENABLED:true}
