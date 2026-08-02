@@ -1,7 +1,8 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import AppShell from '../../components/AppShell.vue';
+import AppShell from '../../layouts/AppShell.vue';
 import { RouteName, RoutePath } from '../constants.js';
+import { workspaceRoutes } from './workspace.js';
 
 const sourceRoutes: RouteRecordRaw[] = [
   {
@@ -101,7 +102,13 @@ export const workbenchRoute: RouteRecordRaw = {
   path: RoutePath.Workbench,
   name: RouteName.Workbench,
   component: AppShell,
-  redirect: { name: RouteName.SourceList },
+  redirect: { name: RouteName.WorkbenchOverview },
   meta: { requiresAuth: true, requiresWorkspace: true },
-  children: [...sourceRoutes, ...schemaRoutes, ...extractionRoutes, ...templateRoutes],
+  children: [
+    ...workspaceRoutes,
+    ...sourceRoutes,
+    ...schemaRoutes,
+    ...extractionRoutes,
+    ...templateRoutes,
+  ],
 };

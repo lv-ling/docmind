@@ -8,7 +8,7 @@ export const appRoutes: RouteRecordRaw[] = [
   ...systemRoutes,
   {
     path: RoutePath.Root,
-    redirect: { name: RouteName.SourceList },
+    redirect: { name: RouteName.WorkbenchOverview },
   },
   workbenchRoute,
   fallbackRoute,

@@ -8,7 +8,8 @@ import { appRoutes } from './modules/index.js';
 export const router = createRouter({
   history: createWebHistory(),
   routes: appRoutes,
-  scrollBehavior: () => ({ top: 0 }),
+  scrollBehavior: (to) =>
+    to.hash.length > 0 ? { el: to.hash, top: 72, behavior: 'smooth' } : { top: 0 },
 });
 
 setupRouterGuards(router);

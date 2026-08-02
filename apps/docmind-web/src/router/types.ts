@@ -7,7 +7,7 @@ declare module 'vue-router' {
     title?: string;
     requiresAuth?: boolean;
     requiresWorkspace?: boolean;
-    module?: 'source' | 'schema' | 'extraction' | 'template' | 'system';
+    module?: 'workspace' | 'source' | 'schema' | 'extraction' | 'template' | 'system';
     menuKey?: RouteRecordName;
     hidden?: boolean;
     requiredQuery?: readonly string[];

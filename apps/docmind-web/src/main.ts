@@ -1,5 +1,5 @@
-import '@/ui/styles.css';
 import './styles.css';
+import '@/ui/styles.css';
 
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';

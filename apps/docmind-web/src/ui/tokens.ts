@@ -1,20 +1,20 @@
 export const DOCMIND_COLOR_TOKENS = {
-  canvas: '#e7e4da',
-  paper: '#fdfcf8',
-  paperMuted: '#f3f0e7',
-  ink: '#171b20',
-  inkMuted: '#5e646b',
-  border: '#c9c6bc',
-  borderStrong: '#8d9195',
-  brand: '#234f73',
-  brandStrong: '#173a58',
-  accent: '#c65231',
-  focus: '#1670ad',
-  success: '#236b4b',
-  warning: '#93651b',
-  danger: '#a63d35',
-  diffInsert: '#2d7a52',
-  diffDelete: '#b2443b',
+  canvas: '#fafafa',
+  paper: '#ffffff',
+  paperMuted: '#f4f4f5',
+  ink: '#18181b',
+  inkMuted: '#71717a',
+  border: '#e4e4e7',
+  borderStrong: '#d4d4d8',
+  brand: '#4f46e5',
+  brandStrong: '#4338ca',
+  accent: '#6366f1',
+  focus: '#6366f1',
+  success: '#059669',
+  warning: '#d97706',
+  danger: '#dc2626',
+  diffInsert: '#059669',
+  diffDelete: '#dc2626',
 } as const;
 
 export const DOCMIND_SPACE_TOKENS = {
@@ -28,15 +28,15 @@ export const DOCMIND_SPACE_TOKENS = {
 } as const;
 
 export const DOCMIND_TYPE_TOKENS = {
-  ui: '"IBM Plex Sans", "Noto Sans SC", "Microsoft YaHei", sans-serif',
+  ui: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", sans-serif',
   document: '"Noto Serif SC", "Songti SC", "Times New Roman", serif',
-  mono: '"JetBrains Mono", "SFMono-Regular", Consolas, monospace',
+  mono: '"SFMono-Regular", Menlo, Monaco, Consolas, monospace',
 } as const;
 
 export const DOCMIND_MOTION_TOKENS = {
-  fast: '120ms',
-  normal: '180ms',
-  easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+  fast: '140ms',
+  normal: '220ms',
+  easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
 } as const;
 
 export const DOCMIND_DESIGN_TOKENS = {

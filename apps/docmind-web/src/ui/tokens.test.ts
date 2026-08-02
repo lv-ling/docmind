@@ -16,7 +16,7 @@ describe('design tokens', () => {
       type: DOCMIND_TYPE_TOKENS,
       motion: DOCMIND_MOTION_TOKENS,
     });
-    expect(DOCMIND_COLOR_TOKENS.paper).toBe('#fdfcf8');
+    expect(DOCMIND_COLOR_TOKENS.paper).toBe('#ffffff');
     expect(DOCMIND_COLOR_TOKENS.diffInsert).not.toBe(DOCMIND_COLOR_TOKENS.diffDelete);
     expect(DOCMIND_TYPE_TOKENS.document).toContain('Noto Serif SC');
     expect(Number.parseInt(DOCMIND_MOTION_TOKENS.fast, 10)).toBeLessThan(

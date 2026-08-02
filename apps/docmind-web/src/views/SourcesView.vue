@@ -2,7 +2,7 @@
 import type { SourceDocument, SourceVersionId, WorkspaceId } from '@/contracts';
 import { DmButton, DmStatus, DmTextField } from '@/ui';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { uploadFileDirectly } from '../api/client.js';
 import { completeSourceUpload, createSourceUpload, listSources } from '../api/sources.js';
@@ -17,6 +17,7 @@ type SourceFilter = 'all' | 'registered' | 'pending';
 
 const SOURCE_PAGE_SIZE = 6;
 
+const route = useRoute();
 const router = useRouter();
 const workspace = useWorkspaceStore();
 const workspaceId = computed(() => workspace.selectedId as WorkspaceId);
@@ -125,6 +126,14 @@ const closeUploadModal = (): void => {
   if (!uploading.value) uploadModalOpen.value = false;
 };
 
+const handleUploadRouteRequest = async (value: unknown): Promise<void> => {
+  if (value !== '1') return;
+  uploadModalOpen.value = true;
+  const nextQuery = { ...route.query };
+  delete nextQuery.upload;
+  await router.replace({ query: nextQuery });
+};
+
 watch([searchQuery, sourceFilter], () => {
   currentPage.value = 1;
   const nextSources = filteredSources.value;
@@ -132,6 +141,20 @@ watch([searchQuery, sourceFilter], () => {
     selectedSourceId.value = nextSources[0]?.id ?? null;
   }
 });
+
+watch(
+  () => route.query.q,
+  (value) => {
+    searchQuery.value = typeof value === 'string' ? value : '';
+  },
+  { immediate: true },
+);
+
+watch(
+  () => route.query.upload,
+  (value) => void handleUploadRouteRequest(value),
+  { immediate: true },
+);
 
 const load = async (): Promise<void> => {
   loading.value = true;
@@ -229,38 +252,62 @@ onMounted(load);
   <section class="page-stack source-page">
     <header class="page-heading source-page-heading">
       <div>
-        <p class="eyebrow">SOURCE REGISTER / W2</p>
-        <h1>原始文档</h1>
-        <p>不可变原件、版本与处理状态集中管理。</p>
+        <h1>文档中心</h1>
+        <p>集中管理不可变原件、版本和处理入口。</p>
       </div>
+      <DmButton type="button" size="small" @click="uploadModalOpen = true">
+        <AppIcon name="plus" /><span>上传文档</span>
+      </DmButton>
     </header>
 
     <div class="source-workbench">
       <section class="source-register" aria-label="文档登记簿">
         <div class="source-list-controls">
-          <label class="source-search">
-            <span class="dm-sr-only">搜索文档</span>
-            <input v-model="searchQuery" type="search" placeholder="搜索文档名称" />
-          </label>
-          <label class="source-filter">
-            <span class="dm-sr-only">文档状态</span>
-            <select v-model="sourceFilter">
-              <option value="all">全部状态</option>
-              <option value="registered">已登记</option>
-              <option value="pending">待上传</option>
-            </select>
-          </label>
-          <button class="source-refresh" type="button" :disabled="loading" @click="load">
-            刷新列表
-          </button>
+          <div class="source-tabs" role="group" aria-label="文档状态筛选">
+            <button
+              type="button"
+              :class="{ active: sourceFilter === 'all' }"
+              @click="sourceFilter = 'all'"
+            >
+              全部文档 <span>{{ sources.length }}</span>
+            </button>
+            <button
+              type="button"
+              :class="{ active: sourceFilter === 'registered' }"
+              @click="sourceFilter = 'registered'"
+            >
+              已登记
+            </button>
+            <button
+              type="button"
+              :class="{ active: sourceFilter === 'pending' }"
+              @click="sourceFilter = 'pending'"
+            >
+              待上传
+            </button>
+          </div>
+          <div class="source-control-actions">
+            <label class="source-search">
+              <AppIcon name="search" aria-hidden="true" />
+              <span class="dm-sr-only">搜索文档</span>
+              <input v-model="searchQuery" type="search" placeholder="搜索文档名称" />
+            </label>
+            <button
+              class="source-refresh"
+              type="button"
+              :disabled="loading"
+              aria-label="刷新文档列表"
+              @click="load"
+            >
+              <AppIcon name="refresh" />
+            </button>
+          </div>
         </div>
 
         <div class="source-list-actions">
           <span v-if="selectedSource">已选择：{{ selectedSource.name }}</span>
           <span v-else>选择文档后可查看任务信息</span>
-          <DmButton type="button" size="small" @click="uploadModalOpen = true">
-            <AppIcon name="upload" /><span>上传文档</span>
-          </DmButton>
+          <span>当前载入 {{ sources.length }} 份</span>
         </div>
 
         <div class="source-table-head" aria-hidden="true">
@@ -360,8 +407,8 @@ onMounted(load);
       <aside v-if="selectedSource" class="source-task-panel" aria-label="当前文档任务">
         <header>
           <div>
-            <p class="eyebrow">CURRENT TASK</p>
-            <h2>当前任务</h2>
+            <p class="eyebrow">CURRENT DOCUMENT</p>
+            <h2>文档信息</h2>
           </div>
           <DmStatus
             :label="selectedSource.current_version_id === null ? '待上传' : '已登记'"
@@ -451,7 +498,7 @@ onMounted(load);
         >
           <header class="upload-modal-header">
             <div>
-              <p class="section-index">新建原始文档</p>
+              <p class="section-index">NEW SOURCE</p>
               <h2 id="upload-title">上传文档</h2>
             </div>
             <div>
@@ -526,3 +573,849 @@ onMounted(load);
     </Teleport>
   </section>
 </template>
+
+<style scoped>
+.source-page {
+  display: grid;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  margin: 0;
+  color: var(--dm-color-zinc-900);
+}
+
+.source-page-heading {
+  position: sticky;
+  z-index: 12;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 11px 22px;
+  border: 0;
+  border-bottom: 1px solid var(--dm-color-border);
+  background: rgb(255 255 255 / 92%);
+  backdrop-filter: blur(12px);
+}
+
+.source-page-heading::after {
+  display: none;
+}
+
+.source-page-heading h1 {
+  margin: 0;
+  color: var(--dm-color-zinc-900);
+  font-family: var(--dm-font-ui);
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: -0.015em;
+}
+
+.source-page-heading p {
+  margin: 3px 0 0;
+  color: var(--dm-color-zinc-500);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.source-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+  width: min(100%, 1500px);
+  padding: 20px 22px 24px;
+  margin: 0 auto;
+}
+
+.source-register,
+.source-task-panel {
+  overflow: hidden;
+  border: 1px solid var(--dm-color-border);
+  border-radius: var(--dm-radius-medium);
+  background: #fff;
+  box-shadow: var(--dm-shadow-card);
+}
+
+.source-register {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(280px, 1fr) auto;
+  min-width: 0;
+  min-height: 570px;
+  padding: 0;
+}
+
+.source-list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--dm-color-border);
+}
+
+.source-tabs,
+.source-control-actions {
+  display: flex;
+  align-items: center;
+}
+
+.source-tabs {
+  align-self: stretch;
+  gap: 18px;
+}
+
+.source-tabs button {
+  position: relative;
+  align-self: stretch;
+  padding: 0;
+  color: var(--dm-color-zinc-500);
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.source-tabs button::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: transparent;
+  content: '';
+}
+
+.source-tabs button.active {
+  color: var(--dm-color-zinc-900);
+  font-weight: 680;
+}
+
+.source-tabs button.active::after {
+  background: var(--dm-color-zinc-900);
+}
+
+.source-tabs button span {
+  padding: 1px 4px;
+  margin-left: 3px;
+  border-radius: 4px;
+  background: var(--dm-color-zinc-100);
+  font: 9px/1.3 var(--dm-font-mono);
+}
+
+.source-control-actions {
+  gap: 7px;
+}
+
+.source-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 210px;
+  min-height: 31px;
+  padding: 0;
+  border: 1px solid var(--dm-color-border);
+  border-radius: 6px;
+  background: var(--dm-color-zinc-50);
+}
+
+.source-search :deep(.app-icon) {
+  position: absolute;
+  left: 9px;
+  width: 13px;
+  height: 13px;
+  color: var(--dm-color-zinc-400);
+  pointer-events: none;
+}
+
+.source-search input {
+  width: 100%;
+  min-height: 31px;
+  padding: 5px 8px 5px 29px;
+  border: 0;
+  outline: 0;
+  color: var(--dm-color-zinc-900);
+  background: transparent;
+  font-size: 10px;
+}
+
+.source-search:focus-within {
+  border-color: #a5b4fc;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(99 102 241 / 7%);
+}
+
+.source-refresh {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  padding: 0;
+  color: var(--dm-color-zinc-500);
+  border: 1px solid var(--dm-color-border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.source-refresh:hover:not(:disabled) {
+  color: var(--dm-color-zinc-900);
+  background: var(--dm-color-zinc-50);
+}
+
+.source-refresh:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.source-refresh :deep(.app-icon) {
+  width: 14px;
+  height: 14px;
+}
+
+.source-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 6px 14px;
+  color: var(--dm-color-zinc-500);
+  border-bottom: 1px solid var(--dm-color-border);
+  background: var(--dm-color-zinc-50);
+  font-size: 9px;
+}
+
+.source-list-actions span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-table-head,
+.source-row {
+  display: grid;
+  grid-template-columns: minmax(250px, 2.2fr) minmax(88px, 0.7fr) minmax(125px, 0.8fr) minmax(
+      94px,
+      0.6fr
+    );
+  align-items: center;
+  gap: 12px;
+}
+
+.source-table-head {
+  min-height: 32px;
+  padding: 0 14px;
+  color: var(--dm-color-zinc-500);
+  border-bottom: 1px solid var(--dm-color-border);
+  background: var(--dm-color-zinc-50);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.source-list-viewport {
+  min-height: 0;
+  overflow: auto;
+}
+
+.source-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.source-list li + li {
+  border-top: 1px solid var(--dm-color-zinc-100);
+}
+
+.source-row {
+  position: relative;
+  width: 100%;
+  min-height: 61px;
+  padding: 8px 14px;
+  text-align: left;
+  border: 0;
+  background: #fff;
+  cursor: pointer;
+  transition: background var(--dm-motion-fast) var(--dm-motion-easing);
+}
+
+.source-row::after {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: transparent;
+  content: '';
+}
+
+.source-row:hover {
+  background: var(--dm-color-zinc-50);
+}
+
+.source-row--selected {
+  background: rgb(238 242 255 / 50%);
+}
+
+.source-row--selected::after {
+  background: var(--dm-color-brand);
+}
+
+.source-file-copy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.file-glyph {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+  color: var(--dm-color-zinc-500);
+  border: 1px solid var(--dm-color-border);
+  border-radius: 6px;
+  background: var(--dm-color-zinc-50);
+}
+
+.file-glyph :deep(.app-icon) {
+  width: 14px;
+  height: 14px;
+}
+
+.source-name {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.source-name strong,
+.source-name small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-name strong {
+  color: var(--dm-color-zinc-900);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.source-name small,
+.source-updated-at {
+  color: var(--dm-color-zinc-400);
+  font-size: 9px;
+}
+
+.source-row > code {
+  overflow: hidden;
+  color: var(--dm-color-zinc-600);
+  font: 9px/1.4 var(--dm-font-mono);
+  text-overflow: ellipsis;
+}
+
+.source-register-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 45px;
+  padding: 7px 14px;
+  border-top: 1px solid var(--dm-color-border);
+  background: #fff;
+}
+
+.source-list-summary {
+  display: flex;
+  gap: 9px;
+  color: var(--dm-color-zinc-500);
+  font-size: 9px;
+}
+
+.text-action {
+  padding: 0;
+  color: var(--dm-color-brand);
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.source-pagination {
+  display: flex;
+  gap: 3px;
+}
+
+.source-pagination button {
+  min-width: 27px;
+  height: 27px;
+  padding: 0 7px;
+  color: var(--dm-color-zinc-500);
+  border: 1px solid var(--dm-color-border);
+  border-radius: 5px;
+  background: #fff;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.source-pagination button:hover:not(:disabled),
+.source-pagination button.active {
+  color: var(--dm-color-zinc-900);
+  border-color: var(--dm-color-zinc-300);
+  background: var(--dm-color-zinc-100);
+}
+
+.source-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.source-task-panel {
+  position: sticky;
+  top: 78px;
+  display: grid;
+  align-content: start;
+  padding: 0;
+}
+
+.source-task-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 55px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--dm-color-border);
+  background: var(--dm-color-zinc-50);
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--dm-color-zinc-400);
+  font: 700 8px/1.2 var(--dm-font-mono);
+  letter-spacing: 0.1em;
+}
+
+.source-task-panel h2 {
+  margin: 0;
+  color: var(--dm-color-zinc-900);
+  font-size: 12px;
+}
+
+.source-task-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border-bottom: 1px solid var(--dm-color-border);
+}
+
+.source-task-identity > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.source-task-identity strong,
+.source-task-identity small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-task-identity strong {
+  font-size: 11px;
+}
+
+.source-task-identity small {
+  color: var(--dm-color-zinc-400);
+  font-size: 9px;
+}
+
+.source-task-section {
+  display: grid;
+  gap: 9px;
+  padding: 12px 13px;
+  border-bottom: 1px solid var(--dm-color-zinc-100);
+}
+
+.source-task-section h3 {
+  margin: 0;
+  color: var(--dm-color-zinc-500);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.source-task-section dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.source-task-section dl > div,
+.source-task-config > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.source-task-section dt,
+.source-task-section dd,
+.source-task-config span,
+.source-task-config strong {
+  margin: 0;
+  color: var(--dm-color-zinc-500);
+  font-size: 9px;
+}
+
+.source-task-section dd,
+.source-task-config strong {
+  color: var(--dm-color-zinc-800);
+  font-weight: 600;
+  text-align: right;
+}
+
+.source-task-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.source-task-steps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: var(--dm-color-zinc-400);
+}
+
+.source-task-steps li::before {
+  position: absolute;
+  top: 8px;
+  right: 50%;
+  left: -50%;
+  height: 1px;
+  background: var(--dm-color-border);
+  content: '';
+}
+
+.source-task-steps li:first-child::before {
+  display: none;
+}
+
+.source-task-steps span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--dm-color-zinc-300);
+  border-radius: 50%;
+  background: #fff;
+  font: 7px/1 var(--dm-font-mono);
+}
+
+.source-task-steps strong {
+  font-size: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.source-task-steps .is-complete {
+  color: var(--dm-color-success);
+}
+
+.source-task-steps .is-current {
+  color: var(--dm-color-brand);
+}
+
+.source-task-panel > footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  padding: 13px;
+}
+
+.source-task-panel > footer p {
+  grid-column: 1 / -1;
+  margin: 0 0 3px;
+  color: var(--dm-color-zinc-500);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.source-task-panel--empty {
+  place-items: center;
+  min-height: 180px;
+  padding: 25px;
+  color: var(--dm-color-zinc-500);
+  text-align: center;
+}
+
+.source-task-panel--empty strong {
+  color: var(--dm-color-zinc-800);
+  font-size: 11px;
+}
+
+.source-task-panel--empty span {
+  font-size: 9px;
+}
+
+.skeleton-list {
+  display: grid;
+  gap: 1px;
+}
+
+.skeleton-list i {
+  min-height: 60px;
+  background: linear-gradient(100deg, #fafafa 20%, #f4f4f5 42%, #fafafa 64%);
+  background-size: 220% 100%;
+  animation: source-loading 1.5s linear infinite;
+}
+
+.source-no-results,
+.empty-register {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  min-height: 300px;
+  padding: 24px;
+  text-align: center;
+}
+
+.source-no-results strong,
+.empty-register strong {
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+.source-no-results p,
+.empty-register p {
+  margin: 4px 0 9px;
+  color: var(--dm-color-zinc-500);
+  font-size: 10px;
+}
+
+.upload-modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(24 24 27 / 38%);
+  backdrop-filter: blur(3px);
+}
+
+.upload-panel--modal {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 470px);
+  padding: 0 17px 17px;
+  overflow: hidden;
+  border: 1px solid var(--dm-color-border);
+  border-radius: var(--dm-radius-large);
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(24 24 27 / 22%);
+  animation: source-modal-reveal 220ms var(--dm-motion-easing) both;
+}
+
+.upload-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  margin: 0 -17px;
+  padding: 10px 17px;
+  border-bottom: 1px solid var(--dm-color-border);
+  background: var(--dm-color-zinc-50);
+}
+
+.upload-modal-header h2 {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.section-index {
+  margin: 0;
+  color: var(--dm-color-zinc-400);
+  font: 700 8px/1 var(--dm-font-mono);
+  letter-spacing: 0.1em;
+}
+
+.upload-modal-header > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.upload-modal-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--dm-color-zinc-500);
+  border: 1px solid var(--dm-color-border);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.drop-zone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 150px;
+  padding: 22px;
+  text-align: center;
+  border: 1px dashed var(--dm-color-zinc-300);
+  border-radius: var(--dm-radius-medium);
+  background: var(--dm-color-zinc-50);
+  transition:
+    border var(--dm-motion-fast) var(--dm-motion-easing),
+    background var(--dm-motion-fast) var(--dm-motion-easing);
+}
+
+.drop-zone--active,
+.drop-zone--selected {
+  border-color: #a5b4fc;
+  background: var(--dm-color-brand-soft);
+}
+
+.drop-zone input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop-zone :deep(.app-icon) {
+  width: 24px;
+  height: 24px;
+  color: var(--dm-color-brand);
+}
+
+.drop-zone strong {
+  font-size: 11px;
+}
+
+.drop-zone span {
+  color: var(--dm-color-zinc-500);
+  font-size: 9px;
+}
+
+.upload-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--dm-color-zinc-100);
+}
+
+.upload-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dm-color-brand);
+  transition: width var(--dm-motion-normal) var(--dm-motion-easing);
+}
+
+@keyframes source-loading {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes source-modal-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+}
+
+@media (max-width: 1050px) {
+  .source-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .source-task-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .source-page-heading {
+    padding: 10px 14px;
+  }
+
+  .source-workbench {
+    padding: 14px;
+  }
+
+  .source-register {
+    min-height: 520px;
+  }
+
+  .source-list-controls {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 0 12px 10px;
+  }
+
+  .source-tabs {
+    min-height: 44px;
+  }
+
+  .source-control-actions,
+  .source-search {
+    width: 100%;
+  }
+
+  .source-table-head,
+  .source-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .source-table-head span:nth-child(3),
+  .source-table-head span:nth-child(4),
+  .source-updated-at,
+  .source-row > code {
+    display: none;
+  }
+
+  .source-register-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .source-list-actions span:last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-list i,
+  .upload-panel--modal {
+    animation: none;
+  }
+}
+</style>

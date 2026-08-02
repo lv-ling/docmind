@@ -1,6 +1,7 @@
 export const RouteName = {
   Login: 'Login',
   Workbench: 'Workbench',
+  WorkbenchOverview: 'WorkbenchOverview',
   SourceList: 'SourceList',
   SourceDetail: 'SourceDetail',
   SchemaList: 'SchemaList',
