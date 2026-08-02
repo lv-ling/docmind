@@ -2,15 +2,11 @@
 
 > 导航：[仓库首页](../README.md) / 测试
 
-`tests/` 只存放跨模块验收和工作区级工具测试。模块单元测试、服务集成测试应与被测代码相邻，分别保留在 `apps/*`、`packages/*` 或 `services/*` 内。
+根目录 `tests/` 只存放跨应用黑盒验收。单元测试、契约测试和服务集成测试必须与被测应用相邻，并由各应用自己的工具链执行。
 
 ```text
 tests/
-├── e2e/        依赖 API、AI 和本地基础设施的端到端验收
-└── tooling/    根工作区配置与工具链约束测试
+└── e2e/    依赖 Server、Document AI 和本地基础设施的端到端验收
 ```
 
-- [跨服务验收测试](e2e/README.md)
-- [工具链测试](tooling/README.md)
-
-完整质量门禁使用 `pnpm check`；真实依赖验收需先启动基础设施、AI 和 API。
+E2E 入口只使用 Python 3 标准库，不需要根目录 `package.json`、Python 虚拟环境或第三方测试框架。执行说明见[跨服务验收](e2e/README.md)。

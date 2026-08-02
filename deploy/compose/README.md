@@ -21,19 +21,27 @@
 推荐从仓库根目录使用统一脚本；`start` 会等待四项基础服务健康，并以一次性任务幂等创建 MinIO bucket。
 
 ```bash
-pnpm infra:start
-pnpm infra:status
-pnpm infra:logs
-pnpm infra:stop
+# 启动服务、等待健康并初始化 MinIO bucket
+./scripts/dev/infra.sh start
+
+# 查看容器状态
+./scripts/dev/infra.sh status
+
+# 持续查看全部基础设施日志
+./scripts/dev/infra.sh logs
+
+# 停止容器但保留数据卷
+./scripts/dev/infra.sh stop
 ```
 
-Compose 配置发生变化后执行 `pnpm infra:recreate`，它重建容器并重新确认 bucket，但不会删除数据卷。查看单个服务日志可使用 `./scripts/dev/infra.sh logs <service>`。
+Compose 配置发生变化后执行 `./scripts/dev/infra.sh recreate`，它重建容器并重新确认 bucket，但不会删除数据卷。查看单个服务日志可使用 `./scripts/dev/infra.sh logs <service>`。
 
 ## 本地配置
 
 默认值定义在 `docker-compose.yml` 和 [`.env.example`](.env.example) 中。如需覆盖，复制为本目录下的 `.env`：
 
 ```bash
+# 创建本机私有覆盖文件；该文件不会提交到 Git
 cp deploy/compose/.env.example deploy/compose/.env
 ```
 
@@ -42,9 +50,16 @@ cp deploy/compose/.env.example deploy/compose/.env
 ## 可选 ONLYOFFICE
 
 ```bash
+# 启动并等待 ONLYOFFICE 健康
 ./scripts/dev/infra.sh editor-start
+
+# 查看 ONLYOFFICE 状态
 ./scripts/dev/infra.sh editor-status
+
+# 持续查看 ONLYOFFICE 日志
 ./scripts/dev/infra.sh editor-logs
+
+# 停止 ONLYOFFICE，保留相关数据
 ./scripts/dev/infra.sh editor-stop
 ```
 

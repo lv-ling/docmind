@@ -54,6 +54,3 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
-
-# Generated contracts
-packages/contracts/generated/

@@ -7,7 +7,10 @@
 使用前确认 Docker Desktop 已运行，并在项目根目录启动服务：
 
 ```bash
+# 启动基础设施、等待健康并初始化 MinIO bucket
 ./scripts/dev/infra.sh start
+
+# 查看所有基础设施容器状态
 ./scripts/dev/infra.sh status
 ```
 
@@ -35,6 +38,7 @@ Password: 12345678
 进入交互终端：
 
 ```bash
+# 进入 PostgreSQL 容器内的 psql，连接 docmind 数据库
 docker exec -it docmind-postgres psql -U docmind -d docmind
 ```
 
@@ -59,6 +63,7 @@ Password: 12345678
 进入客户端并验证：
 
 ```bash
+# 进入 Redis CLI；随后执行 PING 验证连接
 docker exec -it docmind-redis redis-cli -a 12345678
 PING
 ```
@@ -82,7 +87,10 @@ Password: 12345678
 命令行检查：
 
 ```bash
+# 检查 RabbitMQ 节点是否响应
 docker exec docmind-rabbitmq rabbitmq-diagnostics -q ping
+
+# 查看当前队列、消息和消费者数量
 docker exec docmind-rabbitmq rabbitmqctl list_queues
 ```
 
@@ -104,7 +112,10 @@ Secret Key: 12345678
 查看 bucket：
 
 ```bash
+# 在容器内为本地 MinIO 配置别名
 docker exec docmind-minio mc alias set local http://127.0.0.1:9000 minioadmin 12345678
+
+# 列出本地 MinIO 中已初始化的 bucket
 docker exec docmind-minio mc ls local
 ```
 

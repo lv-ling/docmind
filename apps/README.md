@@ -2,15 +2,17 @@
 
 > 导航：[仓库首页](../README.md) / 应用层
 
-`apps/` 存放面向最终用户、可独立构建和运行的应用。应用负责页面编排与交互，不承载可跨应用复用的契约、编辑器内核或基础组件。
+`apps/` 存放三个可独立安装、构建、测试和运行的应用。
 
 ```text
 apps/
-└── web/    Vue 3 + TypeScript + Vite 用户端
+├── docmind-web/          Vue 3 + TypeScript + Vite 用户端
+├── docmind-server/       Java 17 + Spring Boot 3 业务后端
+└── docmind-document-ai/  Python 3.12 + FastAPI 文档智能服务
 ```
 
-当前应用：
+- [DocMind Web](docmind-web/README.md) 自己持有 `package.json`、`pnpm-lock.yaml`、Node 版本和所有前端源码。
+- [DocMind Server](docmind-server/README.md) 自己持有 `pom.xml`、Maven Wrapper 和它对外提供的业务契约。
+- [DocMind Document AI](docmind-document-ai/README.md) 自己持有 `pyproject.toml`、`uv.lock` 和模型输出契约。
 
-- [Web 应用](web/README.md)：原件、Schema、抽取复核和模板工作台。
-
-新增应用时，应在独立子目录中提供 `README.md`、运行命令和依赖边界，并优先复用 `packages/*`，不能复制共享实现。
+应用之间只通过 HTTP、消息和版本化数据契约协作，不共享源码包、依赖锁、数据库实体或构建过程。根目录脚本只负责编排这些应用自己的命令，不形成新的包管理层。

@@ -12,8 +12,13 @@ onlyoffice/
 从仓库根目录启动、停止和查看编辑服务：
 
 ```bash
+# 启动并等待 ONLYOFFICE 健康
 ./scripts/dev/infra.sh editor-start
+
+# 查看 ONLYOFFICE 容器状态
 ./scripts/dev/infra.sh editor-status
+
+# 停止 ONLYOFFICE，保留相关数据
 ./scripts/dev/infra.sh editor-stop
 ```
 

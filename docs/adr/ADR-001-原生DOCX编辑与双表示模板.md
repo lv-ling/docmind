@@ -39,10 +39,10 @@ T0.1 将 DOCX 解析为受控文档 JSON，再序列化为白名单 HTML。该�
 
 | 模块 | 保留 | 新增或调整 |
 | --- | --- | --- |
-| `services/api` | 权限、模板版本、对象存储、任务、审计 | 编辑会话、编辑器配置/JWT、保存回调、DOCX 安全校验、Content Control 校验、版本提交编排 |
-| `services/ai` | PII、抽取、PDF/DOCX 文本解析、证据 | 输出派生模型和版式告警；不负责浏览器分页，不持有编辑会话 |
-| `apps/web` | 左右分栏、原件 PDF、版本和告警 | 嵌入原生编辑器、字段面板、保存状态、会话恢复；移除段落下拉式主编辑路径 |
-| `packages/editor` | 受控模型、字段绑定、结构 Diff、旧 HTML 兼容 | 增加字段清单和派生产物适配；不再承担 Word 页面布局事实源 |
+| `apps/docmind-server` | 权限、模板版本、对象存储、任务、审计 | 编辑会话、编辑器配置/JWT、保存回调、DOCX 安全校验、Content Control 校验、版本提交编排 |
+| `apps/docmind-document-ai` | PII、抽取、PDF/DOCX 文本解析、证据 | 输出派生模型和版式告警；不负责浏览器分页，不持有编辑会话 |
+| `apps/docmind-web` | 左右分栏、原件 PDF、版本和告警 | 嵌入原生编辑器、字段面板、保存状态、会话恢复；移除段落下拉式主编辑路径 |
+| `apps/docmind-web/src/editor` | 受控模型、字段绑定、结构 Diff、旧 HTML 兼容 | 作为 Web 内部模块增加字段清单和派生产物适配；不再承担 Word 页面布局事实源 |
 | `deploy` | PostgreSQL、Redis、RabbitMQ、MinIO | 文档编辑服务、内部网络、JWT Secret、健康检查、资源限额和字体包 |
 
 ## 编辑会话与提交协议

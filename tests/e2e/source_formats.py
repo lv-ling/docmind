@@ -100,9 +100,7 @@ def upload(url: str, payload: bytes, required_headers: dict[str, str]) -> str:
         raise SmokeTestError(f"object upload: HTTP {error.code}: {details}") from error
 
 
-def wait_for_preview(
-    api: ApiClient, version_id: str, timeout: float
-) -> dict[str, Any]:
+def wait_for_preview(api: ApiClient, version_id: str, timeout: float) -> dict[str, Any]:
     deadline = time.monotonic() + timeout
     last_status = "unknown"
     while time.monotonic() < deadline:
@@ -160,7 +158,9 @@ def upload_fixture(
 
     require(hashlib.sha256(original).hexdigest() == sha256, "original digest mismatch")
     require(original_type == fixture.mime_type, f"unexpected MIME: {original_type}")
-    require(preview_type == "application/pdf", f"unexpected preview MIME: {preview_type}")
+    require(
+        preview_type == "application/pdf", f"unexpected preview MIME: {preview_type}"
+    )
     require(preview_pdf.startswith(b"%PDF"), "preview payload is not a PDF")
     page_count = preview["preview"].get("page_count")
     require(
