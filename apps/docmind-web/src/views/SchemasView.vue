@@ -13,8 +13,7 @@ import {
   type WorkspaceId,
 } from '@/contracts';
 import { DmButton, DmTextField } from '@/ui';
-import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import {
   createSchema,
@@ -24,6 +23,7 @@ import {
   listSensitiveRuleTemplates,
 } from '../api/schemas.js';
 import InlineNotice from '../components/InlineNotice.vue';
+import { useWorkspaceStore } from '../stores/workspace.js';
 
 interface EditableField {
   clientId: string;
@@ -51,8 +51,8 @@ const createEditableField = (index: number): EditableField => ({
   extractionHint: '',
 });
 
-const route = useRoute();
-const workspaceId = computed(() => route.params.workspaceId as WorkspaceId);
+const workspace = useWorkspaceStore();
+const workspaceId = computed(() => workspace.selectedId as WorkspaceId);
 const activeTab = ref<'schemas' | 'sensitive'>('schemas');
 const schemas = ref<ExtractionSchema[]>([]);
 const sensitiveTemplates = ref<SensitiveRuleTemplate[]>([]);
@@ -137,6 +137,8 @@ const load = async (): Promise<void> => {
     loading.value = false;
   }
 };
+
+watch(workspaceId, () => void load());
 
 const addField = (): void => {
   fields.value.push(createEditableField(fields.value.length));

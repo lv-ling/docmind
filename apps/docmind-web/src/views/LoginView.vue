@@ -5,7 +5,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { ApiClientError } from '../api/client.js';
 import AppIcon from '../components/AppIcon.vue';
-import { isSafeWorkspaceRedirect } from '../session.js';
+import { RouteName } from '../router/constants.js';
+import { isSafeAppRedirect } from '../session.js';
 import { useAuthStore } from '../stores/auth.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
 
@@ -25,9 +26,8 @@ const submit = async (): Promise<void> => {
   try {
     await auth.login(email.value.trim(), password.value);
     await workspace.load();
-    const requested = isSafeWorkspaceRedirect(route.query.redirect) ? route.query.redirect : null;
-    const target =
-      requested ?? (workspace.selectedId === null ? '/' : `/w/${workspace.selectedId}/sources`);
+    const requested = isSafeAppRedirect(route.query.redirect) ? route.query.redirect : null;
+    const target = requested ?? { name: RouteName.SourceList };
     await router.replace(target);
   } catch (caught) {
     error.value =

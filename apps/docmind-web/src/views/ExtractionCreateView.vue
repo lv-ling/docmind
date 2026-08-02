@@ -13,11 +13,17 @@ import { createExtraction } from '../api/extractions.js';
 import { listSchemas, listSensitiveRuleTemplates } from '../api/schemas.js';
 import AppIcon from '../components/AppIcon.vue';
 import InlineNotice from '../components/InlineNotice.vue';
+import { RouteName } from '../router/constants.js';
+import { getQueryString } from '../router/query.js';
+import { useWorkspaceStore } from '../stores/workspace.js';
 
 const route = useRoute();
 const router = useRouter();
-const workspaceId = computed(() => route.params.workspaceId as WorkspaceId);
-const sourceVersionId = computed(() => route.query.sourceVersionId as SourceVersionId | undefined);
+const workspace = useWorkspaceStore();
+const workspaceId = computed(() => workspace.selectedId as WorkspaceId);
+const sourceVersionId = computed(
+  () => getQueryString(route.query.sourceVersionId) as SourceVersionId | null,
+);
 const schemas = ref<Awaited<ReturnType<typeof listSchemas>>>([]);
 const sensitiveTemplates = ref<Awaited<ReturnType<typeof listSensitiveRuleTemplates>>>([]);
 const schemaVersionId = ref<SchemaVersionId | ''>('');
@@ -27,7 +33,7 @@ const submitting = ref(false);
 const error = ref('');
 
 const load = async (): Promise<void> => {
-  if (sourceVersionId.value === undefined) {
+  if (sourceVersionId.value === null) {
     error.value = '缺少原始文档版本，请从文档详情页发起抽取';
     loading.value = false;
     return;
@@ -50,7 +56,7 @@ const load = async (): Promise<void> => {
 };
 
 const submit = async (): Promise<void> => {
-  if (sourceVersionId.value === undefined || schemaVersionId.value === '') return;
+  if (sourceVersionId.value === null || schemaVersionId.value === '') return;
   submitting.value = true;
   error.value = '';
   try {
@@ -58,7 +64,10 @@ const submit = async (): Promise<void> => {
       schema_version_id: schemaVersionId.value,
       sensitive_rule_template_version_id: ruleVersionId.value === '' ? null : ruleVersionId.value,
     });
-    await router.replace(`/w/${workspaceId.value}/extractions/${accepted.extraction_id}`);
+    await router.replace({
+      name: RouteName.ExtractionReview,
+      query: { extractionId: accepted.extraction_id },
+    });
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '抽取任务创建失败';
   } finally {

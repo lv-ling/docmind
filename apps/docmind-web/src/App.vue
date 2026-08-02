@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 
+import { RouteName } from './router/constants.js';
 import { SESSION_EXPIRED_EVENT, sessionExpiredLocation } from './session.js';
 import { useWorkspaceStore } from './stores/workspace.js';
 
@@ -10,7 +11,7 @@ const router = useRouter();
 const workspace = useWorkspaceStore();
 
 const handleSessionExpired = (): void => {
-  if (route.name === 'login') return;
+  if (route.name === RouteName.Login) return;
   workspace.reset();
   void router.replace(sessionExpiredLocation(route.fullPath));
 };

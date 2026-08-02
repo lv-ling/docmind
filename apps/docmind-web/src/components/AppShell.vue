@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { DmButton } from '@/ui';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+import { RouteName } from '../router/constants.js';
 import { useAuthStore } from '../stores/auth.js';
 import { useWorkspaceStore } from '../stores/workspace.js';
 import AppIcon from './AppIcon.vue';
@@ -13,45 +14,41 @@ const route = useRoute();
 const router = useRouter();
 const mobileNavigationOpen = ref(false);
 
-const navigation = computed(() => {
-  const workspaceId = String(route.params.workspaceId);
-  return [
-    {
-      label: '原始文档',
-      name: 'sources',
-      to: `/w/${workspaceId}/sources`,
-      icon: 'document' as const,
-    },
-    {
-      label: '字段配置',
-      name: 'schemas',
-      to: `/w/${workspaceId}/schemas`,
-      icon: 'schema' as const,
-    },
-    { label: '抽取复核', name: 'extraction-review', to: null, icon: 'review' as const },
-    {
-      label: '文档模板',
-      name: 'templates',
-      to: `/w/${workspaceId}/templates`,
-      icon: 'template' as const,
-    },
-  ];
-});
+const navigation = [
+  {
+    label: '原始文档',
+    name: RouteName.SourceList,
+    to: { name: RouteName.SourceList },
+    icon: 'document' as const,
+  },
+  {
+    label: '字段配置',
+    name: RouteName.SchemaList,
+    to: { name: RouteName.SchemaList },
+    icon: 'schema' as const,
+  },
+  { label: '抽取复核', name: RouteName.ExtractionReview, to: null, icon: 'review' as const },
+  {
+    label: '文档模板',
+    name: RouteName.TemplateList,
+    to: { name: RouteName.TemplateList },
+    icon: 'template' as const,
+  },
+];
 
 const selectWorkspace = async (event: Event): Promise<void> => {
   const next = (event.target as HTMLSelectElement).value as import('@/contracts').WorkspaceId;
   workspace.select(next);
-  await router.push(`/w/${next}/sources`);
+  await router.push({ name: RouteName.SourceList });
 };
 
 const logout = async (): Promise<void> => {
   auth.logout();
   workspace.reset();
-  await router.replace('/login');
+  await router.replace({ name: RouteName.Login });
 };
 
-const isNavigationActive = (name: string): boolean =>
-  route.name === name || (name === 'templates' && route.name === 'template-editor');
+const isNavigationActive = (name: string): boolean => route.meta.menuKey === name;
 </script>
 
 <template>
@@ -66,7 +63,7 @@ const isNavigationActive = (name: string): boolean =>
       >
         <span></span><span></span><span></span>
       </button>
-      <RouterLink class="brand-lockup" :to="`/w/${route.params.workspaceId}/sources`">
+      <RouterLink class="brand-lockup" :to="{ name: RouteName.SourceList }">
         <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <span><strong>DOCMIND</strong><small>文档智能工作台</small></span>
       </RouterLink>

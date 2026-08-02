@@ -2,26 +2,29 @@
 import type { SourceVersionId, Template, WorkspaceId } from '@/contracts';
 import { DOCUMENT_MODEL_VERSION } from '@/editor';
 import { DmButton, DmStatus } from '@/ui';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { createTemplate, listTemplates } from '../api/templates.js';
 import AppIcon from '../components/AppIcon.vue';
 import InlineNotice from '../components/InlineNotice.vue';
+import { RouteName } from '../router/constants.js';
+import { getQueryString } from '../router/query.js';
+import { useWorkspaceStore } from '../stores/workspace.js';
 
 const route = useRoute();
 const router = useRouter();
+const workspace = useWorkspaceStore();
+const workspaceId = computed(() => workspace.selectedId as WorkspaceId);
 const templates = ref<Template[]>([]);
 const loading = ref(true);
 const creating = ref(false);
 const error = ref('');
 const sourceVersionId = computed(() => {
-  const value = route.query.sourceVersionId;
-  return typeof value === 'string' && value.length > 0 ? (value as SourceVersionId) : null;
+  const value = getQueryString(route.query.sourceVersionId);
+  return value === null ? null : (value as SourceVersionId);
 });
-const name = ref(
-  typeof route.query.suggestedName === 'string' ? route.query.suggestedName : '未命名文档模板',
-);
+const name = ref(getQueryString(route.query.suggestedName) ?? '未命名文档模板');
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const statusTone = (
@@ -55,7 +58,7 @@ const scheduleRefresh = (): void => {
 
 const load = async (): Promise<void> => {
   try {
-    templates.value = await listTemplates(String(route.params.workspaceId) as WorkspaceId);
+    templates.value = await listTemplates(workspaceId.value);
     error.value = '';
     scheduleRefresh();
   } catch (caught) {
@@ -72,11 +75,8 @@ const submit = async (): Promise<void> => {
   try {
     const accepted = await createTemplate(sourceVersionId.value, name.value.trim());
     await router.replace({
-      name: 'template-editor',
-      params: {
-        workspaceId: route.params.workspaceId,
-        templateId: accepted.template_id,
-      },
+      name: RouteName.TemplateEditor,
+      query: { templateId: accepted.template_id },
     });
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '模板转换任务创建失败';
@@ -84,6 +84,8 @@ const submit = async (): Promise<void> => {
     creating.value = false;
   }
 };
+
+watch(workspaceId, () => void load());
 
 onMounted(load);
 onUnmounted(() => {
@@ -131,8 +133,8 @@ onUnmounted(() => {
         :key="item.id"
         class="template-register-row"
         :to="{
-          name: 'template-editor',
-          params: { workspaceId: route.params.workspaceId, templateId: item.id },
+          name: RouteName.TemplateEditor,
+          query: { templateId: item.id },
         }"
       >
         <span class="template-name-cell">
@@ -155,7 +157,7 @@ onUnmounted(() => {
       <span class="paper-stack" aria-hidden="true"><i></i><i></i><i></i></span>
       <h2>模板登记簿还是空的</h2>
       <p>请从“原始文档”详情页选择一个已上传版本，再点击“转换为模板”。</p>
-      <RouterLink :to="`/w/${route.params.workspaceId}/sources`">前往原始文档 →</RouterLink>
+      <RouterLink :to="{ name: RouteName.SourceList }">前往原始文档 →</RouterLink>
     </section>
   </section>
 </template>

@@ -29,7 +29,10 @@ import {
   type NativeEditorSessionStatus,
 } from '../api/templates.js';
 import InlineNotice from '../components/InlineNotice.vue';
+import { RouteName } from '../router/constants.js';
+import { getQueryString } from '../router/query.js';
 import { useAuthStore } from '../stores/auth.js';
+import { useWorkspaceStore } from '../stores/workspace.js';
 import { cloneJsonValue } from '../utils/json.js';
 
 type MutableNode = Record<string, unknown> & { id?: unknown; type?: unknown };
@@ -47,7 +50,8 @@ interface DiffChange {
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
-const templateId = computed(() => String(route.params.templateId) as TemplateId);
+const workspace = useWorkspaceStore();
+const templateId = computed(() => getQueryString(route.query.templateId) as TemplateId);
 const detail = ref<TemplateDetail | null>(null);
 const selectedVersionId = ref<TemplateVersionId | null>(null);
 const draft = ref<ControlledDocument | null>(null);
@@ -82,7 +86,7 @@ let nativeStatusTimer: ReturnType<typeof setTimeout> | null = null;
 let nativeEditor: OnlyOfficeEditorInstance | null = null;
 
 const layoutStorageKey = computed(
-  () => `docmind.template-split.${auth.user?.id ?? 'anonymous'}.${route.params.workspaceId}`,
+  () => `docmind.template-split.${auth.user?.id ?? 'anonymous'}.${workspace.selectedId ?? 'none'}`,
 );
 
 const selectedVersion = computed<TemplateVersion | null>(
@@ -584,9 +588,7 @@ onUnmounted(() => {
         <button
           class="back-link"
           type="button"
-          @click="
-            router.push({ name: 'templates', params: { workspaceId: route.params.workspaceId } })
-          "
+          @click="router.push({ name: RouteName.TemplateList })"
         >
           ← 返回模板登记簿
         </button>

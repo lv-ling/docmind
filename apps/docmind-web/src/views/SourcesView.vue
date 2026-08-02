@@ -2,12 +2,14 @@
 import type { SourceDocument, SourceVersionId, WorkspaceId } from '@/contracts';
 import { DmButton, DmStatus, DmTextField } from '@/ui';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
 import { uploadFileDirectly } from '../api/client.js';
 import { completeSourceUpload, createSourceUpload, listSources } from '../api/sources.js';
 import AppIcon from '../components/AppIcon.vue';
 import InlineNotice from '../components/InlineNotice.vue';
+import { RouteName } from '../router/constants.js';
+import { useWorkspaceStore } from '../stores/workspace.js';
 import { formatBytes, sha256Hex, validateSourceFile } from '../utils/file.js';
 
 type UploadStage = 'idle' | 'hashing' | 'uploading' | 'verifying' | 'done';
@@ -15,9 +17,9 @@ type SourceFilter = 'all' | 'registered' | 'pending';
 
 const SOURCE_PAGE_SIZE = 6;
 
-const route = useRoute();
 const router = useRouter();
-const workspaceId = computed(() => route.params.workspaceId as WorkspaceId);
+const workspace = useWorkspaceStore();
+const workspaceId = computed(() => workspace.selectedId as WorkspaceId);
 const sources = ref<SourceDocument[]>([]);
 const loading = ref(true);
 const loadError = ref('');
@@ -99,15 +101,17 @@ const selectSource = (source: SourceDocument): void => {
 
 const openSelectedSource = async (): Promise<void> => {
   if (selectedSource.value === null) return;
-  await router.push(`/w/${workspaceId.value}/sources/${selectedSource.value.id}`);
+  await router.push({
+    name: RouteName.SourceDetail,
+    query: { sourceId: selectedSource.value.id },
+  });
 };
 
 const startSelectedExtraction = async (): Promise<void> => {
   const versionId = selectedSource.value?.current_version_id;
   if (versionId === null || versionId === undefined) return;
   await router.push({
-    name: 'extraction-new',
-    params: { workspaceId: workspaceId.value },
+    name: RouteName.ExtractionCreate,
     query: { sourceVersionId: versionId },
   });
 };
@@ -148,6 +152,8 @@ const load = async (): Promise<void> => {
     loading.value = false;
   }
 };
+
+watch(workspaceId, () => void load());
 
 const chooseFile = (file: File): void => {
   uploadError.value = '';

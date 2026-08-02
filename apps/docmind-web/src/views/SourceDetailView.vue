@@ -13,6 +13,8 @@ import { getAuthenticatedObjectUrl } from '../api/client.js';
 import { getSource, getSourcePreview } from '../api/sources.js';
 import AppIcon from '../components/AppIcon.vue';
 import InlineNotice from '../components/InlineNotice.vue';
+import { RouteName } from '../router/constants.js';
+import { getQueryString } from '../router/query.js';
 import { formatBytes } from '../utils/file.js';
 
 const route = useRoute();
@@ -26,6 +28,7 @@ const loading = ref(true);
 const previewLoading = ref(false);
 const error = ref('');
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
+const sourceId = computed(() => getQueryString(route.query.sourceId));
 
 const revokePreviewUrls = (): void => {
   if (previewObjectUrl.value !== null) URL.revokeObjectURL(previewObjectUrl.value);
@@ -80,8 +83,13 @@ const selectVersion = async (versionId: SourceVersionId): Promise<void> => {
 
 const load = async (): Promise<void> => {
   loading.value = true;
+  if (sourceId.value === null) {
+    error.value = '缺少文档标识';
+    loading.value = false;
+    return;
+  }
   try {
-    detail.value = await getSource(String(route.params.sourceId));
+    detail.value = await getSource(sourceId.value);
     const current = detail.value.source.current_version_id ?? detail.value.versions[0]?.id ?? null;
     if (current !== null) await selectVersion(current);
   } catch (caught) {
@@ -94,8 +102,7 @@ const load = async (): Promise<void> => {
 const startExtraction = async (): Promise<void> => {
   if (selectedVersionId.value === null) return;
   await router.push({
-    name: 'extraction-new',
-    params: { workspaceId: route.params.workspaceId },
+    name: RouteName.ExtractionCreate,
     query: { sourceVersionId: selectedVersionId.value },
   });
 };
@@ -103,8 +110,7 @@ const startExtraction = async (): Promise<void> => {
 const startTemplateConversion = async (): Promise<void> => {
   if (selectedVersionId.value === null) return;
   await router.push({
-    name: 'templates',
-    params: { workspaceId: route.params.workspaceId },
+    name: RouteName.TemplateList,
     query: {
       sourceVersionId: selectedVersionId.value,
       suggestedName: `${detail.value?.source.name ?? '文档'}模板`,

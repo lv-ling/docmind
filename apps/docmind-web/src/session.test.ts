@@ -1,26 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
-import { isSafeWorkspaceRedirect, sessionExpiredLocation } from './session.js';
+import { RouteName } from './router/constants.js';
+import { isSafeAppRedirect, sessionExpiredLocation } from './session.js';
 
 describe('session navigation', () => {
-  it('preserves only workspace-local destinations after expiry', () => {
-    expect(sessionExpiredLocation('/w/workspace-id/sources?tab=latest')).toEqual({
-      name: 'login',
+  it('preserves only workbench-local destinations after expiry', () => {
+    expect(sessionExpiredLocation('/workbench/source/list?tab=latest')).toEqual({
+      name: RouteName.Login,
       query: {
         reason: 'expired',
-        redirect: '/w/workspace-id/sources?tab=latest',
+        redirect: '/workbench/source/list?tab=latest',
       },
     });
     expect(sessionExpiredLocation('/settings')).toEqual({
-      name: 'login',
+      name: RouteName.Login,
       query: { reason: 'expired' },
     });
   });
 
   it('rejects external and malformed redirect targets', () => {
-    expect(isSafeWorkspaceRedirect('/w/one/sources')).toBe(true);
-    expect(isSafeWorkspaceRedirect('https://example.com')).toBe(false);
-    expect(isSafeWorkspaceRedirect('//example.com/w/one')).toBe(false);
-    expect(isSafeWorkspaceRedirect(['/w/one'])).toBe(false);
+    expect(isSafeAppRedirect('/workbench/source/detail?sourceId=one')).toBe(true);
+    expect(isSafeAppRedirect('https://example.com')).toBe(false);
+    expect(isSafeAppRedirect('//example.com/workbench/source/list')).toBe(false);
+    expect(isSafeAppRedirect(['/workbench/source/list'])).toBe(false);
   });
 });

@@ -21,11 +21,12 @@ import {
 } from '../api/extractions.js';
 import { getSourcePreview } from '../api/sources.js';
 import InlineNotice from '../components/InlineNotice.vue';
+import { getQueryString } from '../router/query.js';
 import { useAuthStore } from '../stores/auth.js';
 
 const route = useRoute();
 const auth = useAuthStore();
-const extractionId = computed(() => route.params.extractionId as ExtractionRunId);
+const extractionId = computed(() => getQueryString(route.query.extractionId) as ExtractionRunId);
 const run = shallowRef<ExtractionRunView | null>(null);
 const preview = shallowRef<SourcePreviewAccess | null>(null);
 const previewObjectUrl = ref<string | null>(null);
