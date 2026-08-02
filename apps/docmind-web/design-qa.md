@@ -1,59 +1,78 @@
-# Workbench design QA
+# DocMind Login Design QA
 
-## Visual truth and capture state
+## Comparison Target
 
-- Reference: `/var/folders/fz/yk3h8g6d5p96qwdkfq_3y7980000gn/T/codex-clipboard-4bb27f9d-5579-4b8b-ad3d-35a800355b5c.png`
-- Reference source size: `3014 x 1476` at 2x density, normalized to a `1507 x 738` CSS viewport.
-- Implementation route: `http://127.0.0.1:5174/workbench/overview`
-- Implementation capture: `/Users/lvling/.codex/visualizations/2026/08/02/019fc1a3-8cca-7ff2-ac0c-be3cd8976d16/docmind-workbench-implementation-final.png`
-- Combined comparison: `/Users/lvling/.codex/visualizations/2026/08/02/019fc1a3-8cca-7ff2-ac0c-be3cd8976d16/docmind-workbench-comparison-final.png`
-- Compared viewport: `1507 x 738`; authenticated workbench overview; default scroll position; sidebar expanded; no modal open.
+- Source visual truth: `C:\Users\260713201\Downloads\docmind_workspace (1).html`, `#login-layout`.
+- Source screenshot: `D:\personal-projects\docmind\apps\docmind-web\login-prototype-1440x900.png`.
+- Implementation screenshot: `D:\personal-projects\docmind\apps\docmind-web\login-implementation-final-1440x900.png`.
+- Combined comparison: `D:\personal-projects\docmind\apps\docmind-web\login-comparison-1440x900.png` (source left, implementation right).
+- Viewport: 1440 × 900 CSS px.
+- Pixel dimensions: source 1440 × 900 px; implementation 1440 × 900 px. Browser captures were normalized to the CSS viewport despite the source tab initially reporting DPR 1.5; the implementation tab reported DPR 1.
+- State: desktop, light theme, initial login form after reveal animations completed.
 
-## Full-view comparison
+## Full-view Comparison Evidence
 
-The reference and implementation were placed side by side at the same normalized viewport. The final comparison confirms the same primary geometry: a 215 px sidebar, a 45 px global header, 24 px content inset, a roughly 2.06:1 main/insights split, and matching vertical anchors for the attention queue, pipeline, efficiency card, and recommendation card.
+The source HTML and Vue implementation were served locally and captured in the in-app browser at the same viewport. They were then placed in one 2880 × 900 comparison image and inspected together.
 
-Focused checks covered:
+- Root: 1440 × 900 px in both captures.
+- Grid tracks: 720 px / 720 px in both captures.
+- Brand and login panels: 720 × 900 px each.
+- Brand panel inset: 64 px; logo, headline, tagline, workflow, and footer align to the source.
+- Login form: 340 px wide at x = 910 px and y ≈ 381 px in both captures.
+- Account input: 340 × 41.33 px in the implementation, matching the prototype control dimensions.
+- Zinc/indigo palette, Lucide stroke style, typography hierarchy, border radii, divider, reveal sequence, and AI ping treatment match the source.
 
-- global shell spacing, navigation density, workspace switcher, search, notification, and workflow CTA;
-- workbench heading, AI status summary, review actions, and section labels;
-- priority review card content hierarchy, extracted fields, warning strip, and secondary review row;
-- processing pipeline card and progress presentation;
-- dark efficiency card, supporting metrics, and global recommendation card.
+## Focused Region Evidence
 
-## Iteration history
+- Brand area: logo mark, 36 px headline, uppercase product label, and footer placement match visibly.
+- Workflow: 28 px circular nodes, 24 px icon-to-copy gap, 40 px step spacing, connecting gradient, indigo active node, and restrained ping animation match visibly.
+- Login form: badge, 24 px title, labels, 340 px controls, 20 px vertical rhythm, 40 px submit button, and security divider match visibly.
+- Password control: the added eye button occupies a 28 × 28 px transparent trailing control and preserves the source input height and width.
+- No separate crop was required because every critical surface remains legible in the 2880 × 900 combined image; the form and workflow measurements provide the focused evidence.
 
-### Pass 1 findings
+## Intentional Product Differences
 
-- P1: the shell was wider/taller than the reference and compressed the work area.
-- P1: the previous KPI strip did not exist in the reference and changed the page hierarchy.
-- P1: the main and insight columns did not match the reference proportions.
-- P2: the priority review card lacked the extracted-field and risk-detail density visible in the reference.
-- P2: the right-column gaps and footer height shifted the page's vertical rhythm.
+- `华东数据节点` was removed from the enterprise badge per the current product requirement.
+- The prototype's prefilled `password` value was removed so production login starts empty and does not expose mock credentials.
+- A Lucide eye/eye-off control was added per the current product requirement. It is page-private because the shared text field has no trailing-adornment contract and no other current screen requires this behavior.
 
-### Fixes applied
+## Interaction Verification
 
-- set the desktop shell to the measured 215 px sidebar and 45 px header;
-- removed the KPI strip and rebuilt the workbench as the reference's review-first layout;
-- set the workbench grid to a 2.06:1 split with a 24 px gap;
-- added the detailed priority item, compact secondary item, processing pipeline, AI efficiency card, and recommendation card;
-- tightened card padding, borders, radii, typography, footer density, and responsive behavior;
-- retained real backend summary requests while providing frontend-only demo states for backend capabilities that are not available yet.
+- The account and password controls expose accessible labels.
+- The password toggle changes the input from `password` to `text` and back without changing its value; accessible names switch between `显示密码` and `隐藏密码`.
+- The form calls the existing real `auth.login(email, password)` action, then the existing real `workspace.load()` action.
+- Duplicate submission is ignored while authentication is pending.
+- The submit button enters `验证中...`, disables repeated submission, then retains the 700 ms exit fade before navigation.
+- The successful path navigates to `/workbench/source/list`.
+- Browser console errors: none.
 
-## Interaction and responsive checks
+## Findings
 
-- `连续复核` opens the frontend-only workflow dialog; `稍后处理` closes it.
-- `AI 处理中心` and `审核中心` navigate to the corresponding workbench anchors and update the active navigation state.
-- At `390 x 844`, the sidebar is off-canvas and the page remains within the viewport with no horizontal overflow.
-- Browser console review found no application errors during the desktop interaction pass.
+No actionable P0, P1, or P2 mismatch remains. The only visible source differences are the three explicitly requested product changes listed above.
 
-## Remaining differences
+## Comparison History
 
-- P3: workspace and user names come from the running system rather than the static design copy.
-- P3: a few glyph shapes use the project's existing icon set instead of introducing a new icon dependency.
+1. The previous QA pass was blocked because the local source HTML had not been captured.
+2. The source prototype was served locally and captured at 1440 × 900.
+3. The implementation was recaptured at the same viewport after removing the stale data-node copy and mock password, and after adding the eye control.
+4. The captures were combined and compared in one image. Panel proportions, major alignment, typography, spacing, colors, icons, and copy now pass; no further P0/P1/P2 visual correction was identified.
 
-No P0, P1, or P2 visual issues remain in the verified state.
+## Implementation Checklist
 
-## Final result
+- [x] 50/50 desktop split.
+- [x] Brand area hierarchy and spacing.
+- [x] Three-stage workflow and restrained AI animation.
+- [x] 340 px login form and prototype spacing rhythm.
+- [x] Real auth and workspace store integration.
+- [x] Empty production credentials with no mock branch.
+- [x] Accessible password visibility toggle.
+- [x] Loading, duplicate-submit prevention, exit fade, and navigation tests.
+- [x] Reduced-motion handling.
+- [x] Browser-rendered source, implementation, and combined comparison evidence.
+- [x] Browser console check.
 
-passed
+## Follow-up Polish
+
+No additional visual polish is recommended; changing the layout or styling further would move away from the supplied prototype.
+
+final result: passed
