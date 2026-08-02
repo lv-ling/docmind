@@ -1,0 +1,13 @@
+---
+description: DocMind Web Vue 前端的目录、命名、组件拆分、原子 CSS、安全和验证规范
+globs: apps/docmind-web/**/*.{vue,ts,tsx,js,mjs,css,json,md}
+alwaysApply: false
+---
+
+# DocMind Web rule bridge
+
+在分析、创建、修改或审查 `apps/docmind-web/**` 中的文件前，必须完整读取并遵守：
+
+@apps/docmind-web/AGENTS.md
+
+该文件是前端工程规范的唯一主来源。本规则只负责让 Cursor 按前端路径自动附加规范，不在此复制规则内容；如有冲突，以用户当前明确要求和 `apps/docmind-web/AGENTS.md` 为准。
