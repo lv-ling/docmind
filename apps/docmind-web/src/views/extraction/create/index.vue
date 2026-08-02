@@ -5,7 +5,6 @@ import type {
   SourceVersionId,
   WorkspaceId,
 } from '@/contracts';
-import { DmButton } from '@/ui';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -16,6 +15,7 @@ import InlineNotice from '@/components/InlineNotice.vue';
 import { RouteName } from '@/router/constants.js';
 import { getQueryString } from '@/router/query.js';
 import { useWorkspaceStore } from '@/stores/workspace.js';
+import { DmButton, DmSelect } from '@/ui';
 
 const route = useRoute();
 const router = useRouter();
@@ -107,7 +107,7 @@ onMounted(loadExtractionConfiguration);
       </section>
       <section>
         <label for="schema-version">字段配置版本</label>
-        <select id="schema-version" v-model="schemaVersionId" required>
+        <DmSelect id="schema-version" v-model="schemaVersionId" required>
           <option value="" disabled>请选择已发布 Schema</option>
           <option
             v-for="schema in schemas.filter((item) => item.current_version_id)"
@@ -116,12 +116,12 @@ onMounted(loadExtractionConfiguration);
           >
             {{ schema.name }} · 当前发布版
           </option>
-        </select>
+        </DmSelect>
         <small>模型只能返回配置中声明的字段，应用层会再次进行 JSON Schema 校验。</small>
       </section>
       <section>
         <label for="rule-version">敏感规则版本</label>
-        <select id="rule-version" v-model="ruleVersionId">
+        <DmSelect id="rule-version" v-model="ruleVersionId">
           <option value="">仅使用系统内置规则</option>
           <option
             v-for="template in sensitiveTemplates.filter((item) => item.current_version_id)"
@@ -130,7 +130,7 @@ onMounted(loadExtractionConfiguration);
           >
             {{ template.name }} · 当前发布版
           </option>
-        </select>
+        </DmSelect>
         <small>敏感明文会在发送模型前替换为稳定占位符，返回后受控恢复。</small>
       </section>
       <div class="order-checks">

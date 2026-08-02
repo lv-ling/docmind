@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/components/AppIcon.vue';
+import { DmButton } from '@/ui';
 
 import type { WorkbenchEfficiency, WorkbenchInsight } from '../model/workbench-overview.js';
 
@@ -77,7 +78,7 @@ const emit = defineEmits<{
         <h2 class="m-0 text-[12px] leading-[18px] font-semibold text-zinc-900">全局发现与建议</h2>
       </header>
       <div class="flex items-start gap-2.5">
-        <AppIcon class="mt-0.5 size-3.5 shrink-0 text-[#f59e0b]" name="trending-up" />
+        <AppIcon class="mt-0.5 size-3.5 shrink-0 text-amber-500" name="trending-up" />
         <span class="block">
           <strong class="mb-0.5 block text-[12px] leading-[18px] font-medium text-zinc-900">
             {{ insight.title }}
@@ -85,13 +86,9 @@ const emit = defineEmits<{
           <p class="m-0 text-[11px] leading-[17.875px] text-zinc-500">
             {{ insight.description }}
           </p>
-          <button
-            type="button"
-            class="mt-1.5 inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[11px] leading-[16.5px] font-medium text-brand-600 hover:text-brand-700 [&_.app-icon]:size-3"
-            @click="emit('open-config')"
-          >
+          <DmButton variant="accent-ghost" class="-ml-3 mt-1" @click="emit('open-config')">
             {{ insight.actionLabel }} <AppIcon name="chevron-right" />
-          </button>
+          </DmButton>
         </span>
       </div>
     </section>

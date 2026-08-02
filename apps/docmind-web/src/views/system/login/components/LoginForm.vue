@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ArrowRight, Building2, Eye, EyeOff, LoaderCircle, ShieldCheck } from 'lucide-vue-next';
 import { ref } from 'vue';
+
+import AppIcon from '@/components/AppIcon.vue';
+import { DmButton, DmInput } from '@/ui';
 
 defineProps<{
   account: string;
@@ -17,14 +19,6 @@ const emit = defineEmits<{
 }>();
 
 const isPasswordVisible = ref(false);
-
-const handleAccountInput = (event: Event): void => {
-  emit('update:account', (event.target as HTMLInputElement).value);
-};
-
-const handlePasswordInput = (event: Event): void => {
-  emit('update:password', (event.target as HTMLInputElement).value);
-};
 </script>
 
 <template>
@@ -33,7 +27,7 @@ const handlePasswordInput = (event: Event): void => {
       <div
         class="mb-8 inline-flex translate-y-2 items-center gap-1.5 rounded-compact border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-[0.6875rem] font-medium text-zinc-500 opacity-0 shadow-subtle animate-dm-reveal motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
       >
-        <Building2 class="text-zinc-400" :size="12" :stroke-width="2" aria-hidden="true" />
+        <AppIcon name="building-2" class="size-3 text-zinc-400" />
         <span>DocMind 企业版</span>
       </div>
 
@@ -72,17 +66,18 @@ const handlePasswordInput = (event: Event): void => {
 
         <label class="grid gap-1.5" for="login-account">
           <span class="text-[0.75rem] font-medium text-zinc-700">企业账号</span>
-          <input
+          <DmInput
             id="login-account"
+            appearance="unstyled"
             class="min-h-10 w-full rounded-compact border border-zinc-200 bg-paper px-3.5 py-2.5 text-[0.8125rem] leading-5 text-zinc-900 shadow-subtle outline-none transition-[border-color,box-shadow] duration-control ease-dm placeholder:text-zinc-400 focus:border-brand-400 focus:shadow-control-focus motion-reduce:transition-none"
-            :value="account"
+            :model-value="account"
             type="text"
             name="account"
             autocomplete="username"
             placeholder="name@company.com"
             required
             :aria-describedby="error ? 'login-error' : undefined"
-            @input="handleAccountInput"
+            @update:model-value="emit('update:account', String($event))"
           />
         </label>
 
@@ -91,58 +86,59 @@ const handlePasswordInput = (event: Event): void => {
             密码
           </label>
           <div class="relative">
-            <input
+            <DmInput
               id="login-password"
+              appearance="unstyled"
               class="min-h-10 w-full rounded-compact border border-zinc-200 bg-paper py-2.5 pr-11 pl-3.5 text-[0.8125rem] leading-5 text-zinc-900 shadow-subtle outline-none transition-[border-color,box-shadow] duration-control ease-dm placeholder:text-zinc-400 focus:border-brand-400 focus:shadow-control-focus motion-reduce:transition-none"
-              :value="password"
+              :model-value="password"
               :type="isPasswordVisible ? 'text' : 'password'"
               name="password"
               autocomplete="current-password"
               placeholder="••••••••"
               required
               :aria-describedby="error ? 'login-error' : undefined"
-              @input="handlePasswordInput"
+              @update:model-value="emit('update:password', String($event))"
             />
-            <button
+            <DmButton
+              variant="ghost"
+              icon-only
               class="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs border-0 bg-transparent p-0 text-zinc-400 transition-[color,background-color] duration-interaction ease-standard hover:bg-zinc-100 hover:text-zinc-700 focus-visible:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-focus motion-reduce:transition-none"
-              type="button"
               :aria-label="isPasswordVisible ? '隐藏密码' : '显示密码'"
               :aria-pressed="isPasswordVisible"
               @click="isPasswordVisible = !isPasswordVisible"
             >
-              <EyeOff v-if="isPasswordVisible" :size="16" :stroke-width="1.8" />
-              <Eye v-else :size="16" :stroke-width="1.8" />
-            </button>
+              <AppIcon :name="isPasswordVisible ? 'eye-off' : 'eye'" class="size-4" />
+            </DmButton>
           </div>
         </div>
 
         <div class="pt-2">
-          <button
+          <DmButton
+            variant="dark"
             class="inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-compact border-0 bg-zinc-900 px-4 py-2.5 text-[0.8125rem] leading-5 font-medium text-white shadow-subtle transition-colors duration-interaction ease-standard enabled:hover:bg-zinc-800 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-focus disabled:cursor-wait motion-reduce:transition-none"
             type="submit"
             :disabled="isSubmitting"
             :aria-busy="isSubmitting"
           >
             <template v-if="isSubmitting">
-              <LoaderCircle
-                class="animate-dm-spin motion-reduce:animate-none"
-                :size="14"
-                :stroke-width="2"
+              <AppIcon
+                name="loader-circle"
+                class="size-3.5 animate-dm-spin motion-reduce:animate-none"
               />
               <span>验证中...</span>
             </template>
             <template v-else>
               <span>登录工作空间</span>
-              <ArrowRight :size="14" :stroke-width="2" aria-hidden="true" />
+              <AppIcon name="arrow-right" class="size-3.5" />
             </template>
-          </button>
+          </DmButton>
         </div>
       </form>
 
       <p
         class="mt-8 mr-0 mb-0 ml-0 flex translate-y-2 items-center justify-center gap-1.5 border-t border-zinc-100 pt-6 text-[0.6875rem] text-zinc-400 opacity-0 animate-dm-reveal animate-delay-200 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
       >
-        <ShieldCheck class="text-zinc-300" :size="14" :stroke-width="2" aria-hidden="true" />
+        <AppIcon name="shield-check" class="size-3.5 text-zinc-300" />
         <span>安全连接 · 会话仅保留在当前浏览器标签页</span>
       </p>
     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/components/AppIcon.vue';
+import { DmButton } from '@/ui';
 
 import type { WorkbenchAttentionItem } from '../model/workbench-overview.js';
 
@@ -89,19 +90,19 @@ const emit = defineEmits<{
             </div>
           </div>
 
-          <button
-            type="button"
-            class="inline-flex h-[30px] min-h-[30px] cursor-pointer items-center gap-1.5 rounded-compact px-3 py-0 text-[12px] leading-none font-medium transition-[opacity,color,background-color,border-color] duration-interaction ease-dm focus-visible:opacity-100 max-[700px]:col-start-2 max-[700px]:justify-self-start [&_.app-icon]:size-3.5"
-            :class="
+          <DmButton
+            :variant="item.variant === 'review' ? 'ghost' : 'secondary'"
+            :class="[
+              'max-[700px]:col-start-2 max-[700px]:justify-self-start',
               item.variant === 'review'
-                ? 'border border-transparent bg-brand-50 text-brand-600 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:border-brand-100 hover:bg-brand-100'
-                : 'border border-zinc-200 bg-white text-zinc-700 shadow-subtle hover:bg-zinc-50'
-            "
+                ? 'text-brand-600 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                : null,
+            ]"
             @click="emit('open-item', item)"
           >
             {{ item.actionLabel }}
             <AppIcon v-if="item.variant === 'review'" name="arrow-right" />
-          </button>
+          </DmButton>
         </div>
 
         <dl

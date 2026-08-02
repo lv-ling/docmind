@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/components/AppIcon.vue';
+import { DmInteractiveSurface } from '@/ui';
 
 import type { WorkbenchPipelineItem } from '../model/workbench-overview.js';
 
@@ -23,7 +24,7 @@ const emit = defineEmits<{
     </header>
 
     <div class="pipeline-panel__list grid grid-cols-2 gap-4 max-[700px]:grid-cols-1">
-      <button
+      <DmInteractiveSurface
         v-for="item in items"
         :key="item.id"
         type="button"
@@ -67,7 +68,7 @@ const emit = defineEmits<{
             :style="{ width: `${item.progress}%` }"
           ></i>
         </span>
-      </button>
+      </DmInteractiveSurface>
     </div>
   </section>
 </template>

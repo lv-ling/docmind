@@ -2,7 +2,20 @@ import { renderToString } from '@vue/server-renderer';
 import { createSSRApp, h, type Component, type VNodeChild } from 'vue';
 import { describe, expect, it } from 'vitest';
 
-import { DmButton, DmProgress, DmSplitPane, DmStatus, DmTabs, DmTextField } from '@/ui';
+import {
+  DmButton,
+  DmCheckbox,
+  DmInput,
+  DmInteractiveSurface,
+  DmProgress,
+  DmRange,
+  DmSelect,
+  DmSplitPane,
+  DmStatus,
+  DmTabs,
+  DmTextField,
+  DmTextarea,
+} from '@/ui';
 
 type TestSlots = Record<string, () => VNodeChild>;
 
@@ -26,10 +39,89 @@ describe('UI component rendering contracts', () => {
     );
 
     expect(html).toContain('disabled');
+    expect(html).toContain('data-slot="button"');
     expect(html).toContain('aria-busy="true"');
-    expect(html).toContain('dm-button__label" aria-hidden="true"');
+    expect(html).toContain('dm-button__label');
+    expect(html).toContain('aria-hidden="true"');
     expect(html).toContain('保存模板');
     expect(html).toContain('role="status">正在保存</span>');
+  });
+
+  it('keeps icon-only and dark buttons inside the shared 30 px contract', async () => {
+    const html = await renderComponent(
+      DmButton,
+      { variant: 'dark', iconOnly: true, 'aria-label': '返回' },
+      { default: () => '图标' },
+    );
+
+    expect(html).toContain('dm-button--dark');
+    expect(html).toContain('h-[30px]');
+    expect(html).toContain('w-[30px]');
+    expect(html).toContain('px-0');
+    expect(html).toContain('aria-label="返回"');
+  });
+
+  it('renders shared select and checkbox controls with accessible labels', async () => {
+    const selectHtml = await renderComponent(
+      DmSelect,
+      { id: 'file-type', modelValue: 'PDF', 'aria-label': '文件类型' },
+      { default: () => h('option', { value: 'PDF' }, 'PDF') },
+    );
+    const checkboxHtml = await renderComponent(DmCheckbox, {
+      id: 'required-field',
+      label: '必填',
+      description: '发布后应用到新任务',
+      modelValue: true,
+    });
+
+    expect(selectHtml).toContain('id="file-type"');
+    expect(selectHtml).toContain('data-slot="native-select"');
+    expect(selectHtml).toContain('aria-label="文件类型"');
+    expect(selectHtml).toContain('h-8');
+    expect(checkboxHtml).toContain('for="required-field"');
+    expect(checkboxHtml).toContain('data-slot="checkbox"');
+    expect(checkboxHtml).toContain('id="required-field"');
+    expect(checkboxHtml).toContain('checked');
+    expect(checkboxHtml).toContain('发布后应用到新任务');
+  });
+
+  it('keeps shared input primitives on the same compact control baseline', async () => {
+    const inputHtml = await renderComponent(DmInput, {
+      id: 'query',
+      modelValue: '合同',
+      type: 'search',
+    });
+    const textareaHtml = await renderComponent(DmTextarea, {
+      id: 'description',
+      modelValue: '字段说明',
+    });
+    const rangeHtml = await renderComponent(DmRange, {
+      id: 'confidence',
+      modelValue: 82,
+      min: 0,
+      max: 100,
+    });
+
+    expect(inputHtml).toContain('id="query"');
+    expect(inputHtml).toContain('data-slot="input"');
+    expect(inputHtml).toContain('h-8');
+    expect(textareaHtml).toContain('id="description"');
+    expect(textareaHtml).toContain('data-slot="textarea"');
+    expect(textareaHtml).toContain('rounded-compact');
+    expect(rangeHtml).toContain('id="confidence"');
+    expect(rangeHtml).toContain('accent-brand-600');
+  });
+
+  it('uses the shared interactive surface for composite list rows', async () => {
+    const html = await renderComponent(
+      DmInteractiveSurface,
+      { 'aria-pressed': true },
+      { default: () => '合同对象' },
+    );
+
+    expect(html).toContain('class="dm-interactive-surface"');
+    expect(html).toContain('type="button"');
+    expect(html).toContain('aria-pressed="true"');
   });
 
   it('connects a text field to its description and validation error', async () => {

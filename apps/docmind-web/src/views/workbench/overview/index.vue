@@ -78,19 +78,10 @@ const handleOpenConfig = async (): Promise<void> => {
         </p>
       </div>
       <div class="workbench-overview__actions flex shrink-0 gap-2">
-        <DmButton
-          class="h-[30px] min-h-[30px] gap-1.5 rounded-compact px-3 py-0 text-[12px] leading-none font-medium [&_.app-icon]:size-3.5"
-          variant="secondary"
-          size="small"
-          @click="handleOpenReviewQueue"
-        >
+        <DmButton variant="secondary" size="small" @click="handleOpenReviewQueue">
           <AppIcon class="text-zinc-400" name="list-checks" />审核队列
         </DmButton>
-        <DmButton
-          class="h-[30px] min-h-[30px] gap-1.5 rounded-compact px-3 py-0 text-[12px] leading-none font-medium [&_.app-icon]:size-3.5"
-          size="small"
-          @click="handleStartContinuousReview"
-        >
+        <DmButton size="small" @click="handleStartContinuousReview">
           <AppIcon name="play" />连续复核
         </DmButton>
       </div>
@@ -128,14 +119,9 @@ const handleOpenConfig = async (): Promise<void> => {
       />
     </div>
 
-    <button
-      v-if="overviewError"
-      class="workbench-overview__retry"
-      type="button"
-      @click="loadOverview"
-    >
+    <DmButton v-if="overviewError" variant="ghost" class="justify-self-start" @click="loadOverview">
       重新连接实时数据
-    </button>
+    </DmButton>
 
     <WorkflowPreviewDialog
       :open="workflowPreviewSelection !== null"
@@ -180,17 +166,6 @@ const handleOpenConfig = async (): Promise<void> => {
 .workbench-overview__loading i:nth-child(3) {
   min-height: 76px;
   grid-column: 1;
-}
-
-.workbench-overview__retry {
-  justify-self: start;
-  padding: 0;
-  color: var(--dm-color-brand);
-  border: 0;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 650;
-  cursor: pointer;
 }
 
 @keyframes overview-reveal {

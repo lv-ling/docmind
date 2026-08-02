@@ -45,9 +45,9 @@ watch(
             <small>{{ kind === 'review' ? 'REVIEW WORKFLOW' : 'PROCESSING PIPELINE' }}</small>
             <h2 id="workflow-preview-title">{{ title }}</h2>
           </div>
-          <button type="button" aria-label="关闭" @click="emit('close')">
+          <DmButton variant="ghost" icon-only aria-label="关闭" @click="emit('close')">
             <AppIcon name="close" />
-          </button>
+          </DmButton>
         </header>
 
         <p>
@@ -131,29 +131,6 @@ watch(
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.workflow-preview-dialog header button {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  color: var(--dm-color-zinc-400);
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  cursor: pointer;
-}
-
-.workflow-preview-dialog header button:hover {
-  color: var(--dm-color-zinc-900);
-  background: var(--dm-color-zinc-100);
-}
-
-.workflow-preview-dialog header button :deep(.app-icon) {
-  width: 15px;
-  height: 15px;
 }
 
 .workflow-preview-dialog > p {

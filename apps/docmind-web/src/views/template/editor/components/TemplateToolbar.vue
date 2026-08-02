@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { NativeEditorSessionStatus } from '@/api/templates.js';
+import { DmButton, DmRange } from '@/ui';
+
+import AppIcon from '@/components/AppIcon.vue';
 
 const zoomPercentage = defineModel<number>('zoomPercentage', { required: true });
 const originalPage = defineModel<number>('originalPage', { required: true });
@@ -24,39 +27,55 @@ const emit = defineEmits<{
 <template>
   <section class="template-toolbar">
     <div class="mode-switch" aria-label="模板模式">
-      <button
-        type="button"
+      <DmButton
+        variant="ghost"
         :class="{ active: !isEditMode && !isNativeMode }"
         @click="emit('show-preview')"
       >
         预览
-      </button>
-      <button
-        type="button"
+      </DmButton>
+      <DmButton
+        variant="ghost"
         :class="{ active: isEditMode && !isNativeMode }"
         :disabled="!isCurrentVersion"
         @click="emit('show-edit')"
       >
         微调
-      </button>
-      <button
-        type="button"
+      </DmButton>
+      <DmButton
+        variant="ghost"
         :class="{ active: isNativeMode }"
         :disabled="!isCurrentVersion || isLoadingNativeEditor"
         @click="emit('start-native-editor')"
       >
         {{ isLoadingNativeEditor ? '正在启动…' : '原生编辑 POC' }}
-      </button>
+      </DmButton>
     </div>
     <label v-if="!isNativeMode">
       缩放
-      <input v-model.number="zoomPercentage" type="range" min="50" max="150" step="5" />
+      <DmRange v-model="zoomPercentage" :min="50" :max="150" :step="5" />
       <span>{{ zoomPercentage }}%</span>
     </label>
     <div class="page-navigator">
-      <button type="button" :disabled="originalPage <= 1" @click="originalPage--">‹</button>
+      <DmButton
+        variant="ghost"
+        icon-only
+        aria-label="上一页"
+        :disabled="originalPage <= 1"
+        @click="originalPage--"
+      >
+        <AppIcon name="chevron-left" />
+      </DmButton>
       <span>原件 P{{ originalPage }} / {{ pageCount }}</span>
-      <button type="button" :disabled="originalPage >= pageCount" @click="originalPage++">›</button>
+      <DmButton
+        variant="ghost"
+        icon-only
+        aria-label="下一页"
+        :disabled="originalPage >= pageCount"
+        @click="originalPage++"
+      >
+        <AppIcon name="chevron-right" />
+      </DmButton>
     </div>
     <span v-if="isNativeMode" class="template-save-state native">
       {{ nativeStatus?.status ?? '正在建立编辑会话' }}

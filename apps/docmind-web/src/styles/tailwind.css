@@ -38,6 +38,40 @@
   --color-brand-800: var(--dm-color-brand-800);
   --color-brand-900: var(--dm-color-brand-900);
 
+  /* Prototype semantic scales bridge to the existing success/warning/danger tokens. */
+  --color-emerald-50: color-mix(in srgb, var(--dm-color-success) 7%, white);
+  --color-emerald-100: color-mix(in srgb, var(--dm-color-success) 14%, white);
+  --color-emerald-200: color-mix(in srgb, var(--dm-color-success) 24%, white);
+  --color-emerald-300: color-mix(in srgb, var(--dm-color-success) 42%, white);
+  --color-emerald-400: color-mix(in srgb, var(--dm-color-success) 70%, white);
+  --color-emerald-500: var(--dm-color-success);
+  --color-emerald-600: color-mix(in srgb, var(--dm-color-success) 88%, black);
+  --color-emerald-700: color-mix(in srgb, var(--dm-color-success) 76%, black);
+  --color-emerald-800: color-mix(in srgb, var(--dm-color-success) 64%, black);
+  --color-emerald-900: color-mix(in srgb, var(--dm-color-success) 52%, black);
+
+  --color-amber-50: color-mix(in srgb, var(--dm-color-warning) 7%, white);
+  --color-amber-100: color-mix(in srgb, var(--dm-color-warning) 14%, white);
+  --color-amber-200: color-mix(in srgb, var(--dm-color-warning) 24%, white);
+  --color-amber-300: color-mix(in srgb, var(--dm-color-warning) 42%, white);
+  --color-amber-400: color-mix(in srgb, var(--dm-color-warning) 70%, white);
+  --color-amber-500: var(--dm-color-warning);
+  --color-amber-600: color-mix(in srgb, var(--dm-color-warning) 88%, black);
+  --color-amber-700: color-mix(in srgb, var(--dm-color-warning) 76%, black);
+  --color-amber-800: color-mix(in srgb, var(--dm-color-warning) 64%, black);
+  --color-amber-900: color-mix(in srgb, var(--dm-color-warning) 52%, black);
+
+  --color-red-50: color-mix(in srgb, var(--dm-color-danger) 7%, white);
+  --color-red-100: color-mix(in srgb, var(--dm-color-danger) 14%, white);
+  --color-red-200: color-mix(in srgb, var(--dm-color-danger) 24%, white);
+  --color-red-300: color-mix(in srgb, var(--dm-color-danger) 42%, white);
+  --color-red-400: color-mix(in srgb, var(--dm-color-danger) 70%, white);
+  --color-red-500: var(--dm-color-danger);
+  --color-red-600: color-mix(in srgb, var(--dm-color-danger) 88%, black);
+  --color-red-700: color-mix(in srgb, var(--dm-color-danger) 76%, black);
+  --color-red-800: color-mix(in srgb, var(--dm-color-danger) 64%, black);
+  --color-red-900: color-mix(in srgb, var(--dm-color-danger) 52%, black);
+
   --color-canvas: var(--dm-color-canvas);
   --color-paper: var(--dm-color-paper);
   --color-paper-muted: var(--dm-color-paper-muted);

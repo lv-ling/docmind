@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { DmButton, DmStatus, DmTextField } from '@/ui';
 import { nextTick, ref, watch } from 'vue';
 
 import AppIcon from '@/components/AppIcon.vue';
 import InlineNotice from '@/components/InlineNotice.vue';
+import { DmButton, DmFileInput, DmStatus, DmTextField } from '@/ui';
 import { formatBytes } from '@/utils/file.js';
 
 import type { UploadStage } from '../composables/useSourceUpload.js';
@@ -27,7 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const dialogRef = ref<HTMLElement | null>(null);
-const fileInputRef = ref<HTMLInputElement | null>(null);
+const fileInputRef = ref<InstanceType<typeof DmFileInput> | null>(null);
 const isDragActive = ref(false);
 let previousFocusElement: HTMLElement | null = null;
 
@@ -88,7 +88,7 @@ watch(
 watch(
   () => props.selectedFile,
   (selectedFile) => {
-    if (selectedFile === null && fileInputRef.value !== null) fileInputRef.value.value = '';
+    if (selectedFile === null) fileInputRef.value?.reset();
   },
 );
 </script>
@@ -121,14 +121,9 @@ watch(
               :tone="uploadStage === 'done' ? 'success' : isUploading ? 'info' : 'neutral'"
               live
             />
-            <button
-              type="button"
-              class="upload-modal-close"
-              aria-label="关闭上传窗口"
-              @click="handleClose"
-            >
-              ×
-            </button>
+            <DmButton variant="secondary" icon-only aria-label="关闭上传窗口" @click="handleClose">
+              <AppIcon name="close" />
+            </DmButton>
           </div>
         </header>
         <div
@@ -142,9 +137,8 @@ watch(
           @dragleave.prevent="isDragActive = false"
           @drop.prevent="handleFileDrop"
         >
-          <input
+          <DmFileInput
             ref="fileInputRef"
-            type="file"
             accept=".doc,.docx,.pdf"
             aria-label="选择 DOC、DOCX 或 PDF 文件"
             @change="handleFileInput"

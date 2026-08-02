@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ScanLine, Sparkles, UserCheck } from 'lucide-vue-next';
+import AppIcon from '@/components/AppIcon.vue';
 </script>
 
 <template>
@@ -12,7 +12,7 @@ import { ScanLine, Sparkles, UserCheck } from 'lucide-vue-next';
         class="relative z-1 inline-flex size-7 shrink-0 items-center justify-center rounded-round border border-zinc-200 bg-paper text-zinc-400 shadow-subtle transition-transform duration-page ease-dm group-hover:scale-110 motion-reduce:transition-none"
         aria-hidden="true"
       >
-        <ScanLine :size="14" :stroke-width="2" />
+        <AppIcon name="scan-line" class="size-3.5" />
       </span>
       <span class="grid gap-1 pt-1">
         <strong class="text-[0.8125rem] font-medium tracking-[0.025em] text-zinc-800">
@@ -28,7 +28,7 @@ import { ScanLine, Sparkles, UserCheck } from 'lucide-vue-next';
         class="relative z-1 inline-flex size-7 shrink-0 items-center justify-center rounded-round border border-brand-200 bg-brand-50 text-brand-600 shadow-brand-glow transition-transform duration-page ease-dm group-hover:scale-110 motion-reduce:transition-none"
         aria-hidden="true"
       >
-        <Sparkles :size="14" :stroke-width="2" />
+        <AppIcon name="sparkles" class="size-3.5" />
         <i
           class="absolute -inset-px rounded-round border border-brand-400 opacity-20 animate-dm-ping motion-reduce:animate-none"
         ></i>
@@ -47,7 +47,7 @@ import { ScanLine, Sparkles, UserCheck } from 'lucide-vue-next';
         class="relative z-1 inline-flex size-7 shrink-0 items-center justify-center rounded-round border border-zinc-200 bg-paper text-zinc-400 shadow-subtle transition-transform duration-page ease-dm group-hover:scale-110 motion-reduce:transition-none"
         aria-hidden="true"
       >
-        <UserCheck :size="14" :stroke-width="2" />
+        <AppIcon name="user-check" class="size-3.5" />
       </span>
       <span class="grid gap-1 pt-1">
         <strong class="text-[0.8125rem] font-medium tracking-[0.025em] text-zinc-800">

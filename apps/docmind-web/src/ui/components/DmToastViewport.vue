@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { CircleAlert, CircleCheck, CircleX, Info, X } from 'lucide-vue-next';
+import AppIcon from '@/components/AppIcon.vue';
+import { DmButton } from '@/components/dm';
 
 import type { DmToastTone } from '../toast.js';
 import { useToast } from '../toast.js';
@@ -7,11 +8,11 @@ import { useToast } from '../toast.js';
 const { toasts, dismissToast } = useToast();
 
 const icons = {
-  success: CircleCheck,
-  info: Info,
-  warning: CircleAlert,
-  danger: CircleX,
-} satisfies Record<DmToastTone, typeof CircleCheck>;
+  success: 'circle-check',
+  info: 'info',
+  warning: 'circle-alert',
+  danger: 'circle-x',
+} as const satisfies Record<DmToastTone, InstanceType<typeof AppIcon>['$props']['name']>;
 </script>
 
 <template>
@@ -23,11 +24,11 @@ const icons = {
         :class="['dm-toast', `dm-toast--${toast.tone}`]"
         :role="toast.tone === 'danger' ? 'alert' : 'status'"
       >
-        <component :is="icons[toast.tone]" class="dm-toast__icon" aria-hidden="true" />
+        <AppIcon :name="icons[toast.tone]" class="dm-toast__icon" />
         <span>{{ toast.message }}</span>
-        <button type="button" aria-label="关闭通知" @click="dismissToast(toast.id)">
-          <X aria-hidden="true" />
-        </button>
+        <DmButton variant="ghost" icon-only aria-label="关闭通知" @click="dismissToast(toast.id)">
+          <AppIcon name="close" />
+        </DmButton>
       </article>
     </TransitionGroup>
   </div>

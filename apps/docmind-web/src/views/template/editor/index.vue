@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DmSplitPane, DmStatus } from '@/ui';
+import { DmButton, DmSplitPane, DmStatus } from '@/ui';
 
 import InlineNotice from '@/components/InlineNotice.vue';
 
@@ -161,8 +161,8 @@ const {
                 >
                 <span class="native-editor-session-meta">
                   <code>{{ nativeStatus?.status ?? 'loading' }}</code>
-                  <button type="button" @click="refreshNativeStatus(false)">检查保存</button>
-                  <button type="button" @click="stopNativeEditor">退出 POC</button>
+                  <DmButton variant="ghost" @click="refreshNativeStatus(false)">检查保存</DmButton>
+                  <DmButton variant="ghost" @click="stopNativeEditor">退出 POC</DmButton>
                 </span>
               </header>
               <div class="native-editor-poc-note">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Zap } from 'lucide-vue-next';
+import AppIcon from '@/components/AppIcon.vue';
 
 import LoginWorkflowPreview from './LoginWorkflowPreview.vue';
 </script>
@@ -16,7 +16,7 @@ import LoginWorkflowPreview from './LoginWorkflowPreview.vue';
         class="inline-flex size-7 items-center justify-center rounded-xs bg-zinc-900 text-white shadow-subtle"
         aria-hidden="true"
       >
-        <Zap :size="14" :stroke-width="2" />
+        <AppIcon name="zap" class="size-3.5" />
       </span>
       <span>DocMind</span>
     </div>

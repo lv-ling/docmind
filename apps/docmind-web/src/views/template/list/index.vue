@@ -1,170 +1,136 @@
 <script setup lang="ts">
-import type { SourceVersionId, Template, WorkspaceId } from '@/contracts';
-import { DOCUMENT_MODEL_VERSION } from '@/editor';
-import { DmButton, DmStatus } from '@/ui';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-import { createTemplate, listTemplates } from '@/api/templates.js';
 import AppIcon from '@/components/AppIcon.vue';
-import InlineNotice from '@/components/InlineNotice.vue';
 import { RouteName } from '@/router/constants.js';
-import { getQueryString } from '@/router/query.js';
-import { useWorkspaceStore } from '@/stores/workspace.js';
+import { DmButton, DmInteractiveSurface, DmStatus, DmTextField } from '@/ui';
+import { showToast } from '@/ui/toast.js';
 
-const route = useRoute();
+import { TEMPLATE_CENTER_ITEMS } from './model/template-center.js';
+
 const router = useRouter();
-const workspace = useWorkspaceStore();
-const workspaceId = computed(() => workspace.selectedId as WorkspaceId);
-const templates = ref<Template[]>([]);
-const isLoadingTemplates = ref(true);
-const isCreatingTemplate = ref(false);
-const templateError = ref('');
-const sourceVersionId = computed(() => {
-  const value = getQueryString(route.query.sourceVersionId);
-  return value === null ? null : (value as SourceVersionId);
-});
-const templateName = ref(getQueryString(route.query.suggestedName) ?? '未命名文档模板');
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+const isCreateOpen = ref(false);
+const templateName = ref('');
 
-const getStatusTone = (
-  status: Template['conversion_status'],
-): 'info' | 'success' | 'warning' | 'danger' => {
-  if (status === 'ready') return 'success';
-  if (status === 'failed') return 'danger';
-  if (status === 'retrying') return 'warning';
-  return 'info';
+const createTemplate = (): void => {
+  if (templateName.value.trim().length === 0) return;
+  isCreateOpen.value = false;
+  showToast(`模板「${templateName.value.trim()}」草稿已创建`);
+  templateName.value = '';
 };
 
-const getStatusLabel = (status: Template['conversion_status']): string =>
-  ({
-    queued: '等待转换',
-    running: '转换中',
-    ready: '可编辑',
-    retrying: '等待重试',
-    failed: '转换失败',
-  })[status];
-
-const scheduleTemplateRefresh = (): void => {
-  if (refreshTimer !== null) clearTimeout(refreshTimer);
-  if (
-    templates.value.some((item) =>
-      ['queued', 'running', 'retrying'].includes(item.conversion_status),
-    )
-  ) {
-    refreshTimer = setTimeout(loadTemplates, 3000);
-  }
+const openTemplate = async (templateId: string): Promise<void> => {
+  await router.push({ name: RouteName.TemplateEditor, query: { templateId } });
 };
-
-const loadTemplates = async (): Promise<void> => {
-  try {
-    templates.value = await listTemplates(workspaceId.value);
-    templateError.value = '';
-    scheduleTemplateRefresh();
-  } catch (caught) {
-    templateError.value = caught instanceof Error ? caught.message : '模板登记簿读取失败';
-  } finally {
-    isLoadingTemplates.value = false;
-  }
-};
-
-const handleCreateTemplate = async (): Promise<void> => {
-  if (sourceVersionId.value === null || templateName.value.trim().length === 0) return;
-  isCreatingTemplate.value = true;
-  templateError.value = '';
-  try {
-    const accepted = await createTemplate(sourceVersionId.value, templateName.value.trim());
-    await router.replace({
-      name: RouteName.TemplateEditor,
-      query: { templateId: accepted.template_id },
-    });
-  } catch (caught) {
-    templateError.value = caught instanceof Error ? caught.message : '模板转换任务创建失败';
-  } finally {
-    isCreatingTemplate.value = false;
-  }
-};
-
-watch(workspaceId, () => void loadTemplates());
-
-onMounted(loadTemplates);
-onUnmounted(() => {
-  if (refreshTimer !== null) clearTimeout(refreshTimer);
-});
 </script>
 
 <template>
-  <section class="page-stack">
-    <header class="page-heading page-heading--actions">
+  <section class="flex min-h-full animate-dm-page-fade flex-col bg-zinc-50/30 text-zinc-900">
+    <header
+      class="sticky top-0 z-10 flex h-16 box-border items-center justify-between border-b border-zinc-200 bg-white/90 px-6 py-4 backdrop-blur-sm"
+    >
       <div>
-        <p class="eyebrow">TEMPLATE STUDIO / CONTROLLED DOCUMENT</p>
-        <h1>文档模板</h1>
-        <p class="page-lead">从不可变原件生成可审查、可微调、可回滚的受控模板。</p>
+        <h1 class="text-[15px] leading-5 font-semibold">抽取模板</h1>
+        <p class="mt-0.5 text-[11px] text-zinc-500">复用稳定的文档结构与字段抽取能力</p>
       </div>
-      <span class="model-version-stamp">MODEL {{ DOCUMENT_MODEL_VERSION }}</span>
+      <DmButton variant="secondary" @click="isCreateOpen = true"
+        ><AppIcon name="plus" />新建模板</DmButton
+      >
     </header>
 
-    <InlineNotice
-      v-if="templateError"
-      tone="danger"
-      title="模板操作未完成"
-      :detail="templateError"
-    />
-
-    <form v-if="sourceVersionId" class="template-intake" @submit.prevent="handleCreateTemplate">
-      <div>
-        <p class="eyebrow">NEW CONVERSION</p>
-        <h2>将所选原件转换为模板</h2>
-        <p>转换任务会同时生成 PDF 原件预览、受控文档模型、白名单 HTML 和版式告警。</p>
-      </div>
-      <label>
-        <span>模板名称</span>
-        <input v-model="templateName" required maxlength="200" autocomplete="off" />
-        <small>来源版本 {{ sourceVersionId }}</small>
-      </label>
-      <DmButton type="submit" :loading="isCreatingTemplate" loading-label="正在创建转换任务">
-        开始安全转换 <AppIcon name="arrow" />
-      </DmButton>
-    </form>
-
-    <div v-if="isLoadingTemplates" class="document-loading">正在读取模板登记簿…</div>
-    <section v-else-if="templates.length > 0" class="template-register">
-      <header class="register-heading">
-        <span>模板名称</span><span>来源版本</span><span>转换状态</span><span>当前版本</span
-        ><span></span>
-      </header>
-      <RouterLink
-        v-for="item in templates"
-        :key="item.id"
-        class="template-register-row"
-        :to="{
-          name: RouteName.TemplateEditor,
-          query: { templateId: item.id },
-        }"
+    <div
+      class="mx-auto grid w-full max-w-[1600px] grid-cols-1 gap-5 p-6 md:grid-cols-2 xl:grid-cols-3"
+    >
+      <DmInteractiveSurface
+        v-for="template in TEMPLATE_CENTER_ITEMS"
+        :key="template.id"
+        type="button"
+        class="group flex min-h-60 flex-col rounded-lg border border-zinc-200 bg-white p-5 text-left shadow-subtle transition-all duration-interaction hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-card"
+        @click="openTemplate(template.id)"
       >
-        <span class="template-name-cell">
-          <i aria-hidden="true">T</i>
+        <div class="mb-4 flex items-start justify-between">
           <span
-            ><strong>{{ item.name }}</strong
-            ><small>{{ item.id }}</small></span
+            :class="[
+              'flex size-9 items-center justify-center rounded-md border',
+              template.icon === 'layers'
+                ? 'border-brand-100 bg-brand-50 text-brand-600'
+                : 'border-zinc-200 bg-zinc-100 text-zinc-600',
+            ]"
+            ><AppIcon :name="template.icon" class="size-4"
+          /></span>
+          <DmStatus
+            :label="template.status"
+            :tone="template.status === '启用中' ? 'success' : 'warning'"
+          />
+        </div>
+        <h2
+          class="mb-1.5 text-[14px] font-semibold text-zinc-900 transition-colors group-hover:text-brand-600"
+        >
+          {{ template.name }}
+        </h2>
+        <p class="mb-5 flex-1 text-[11px] leading-relaxed text-zinc-500">
+          {{ template.description }}
+        </p>
+        <dl
+          class="grid grid-cols-2 gap-3 rounded border border-zinc-100 bg-zinc-50 p-3 text-[11px]"
+        >
+          <div>
+            <dt class="mb-1 text-[10px] tracking-wider text-zinc-400 uppercase">定义字段</dt>
+            <dd class="font-mono font-medium text-zinc-900">{{ template.fieldCount }} 个</dd>
+          </div>
+          <div>
+            <dt class="mb-1 text-[10px] tracking-wider text-zinc-400 uppercase">历史应用</dt>
+            <dd class="font-mono font-medium text-zinc-900">{{ template.usageCount }}</dd>
+          </div>
+        </dl>
+        <footer class="mt-3 flex items-center justify-between text-[10px] text-zinc-400">
+          <span>更新于 {{ template.updatedAt }}</span
+          ><span
+            class="flex items-center gap-1 font-medium text-brand-600 opacity-0 transition-opacity group-hover:opacity-100"
+            >打开模板<AppIcon name="arrow-right" class="size-3"
+          /></span>
+        </footer>
+      </DmInteractiveSurface>
+    </div>
+
+    <div
+      v-if="isCreateOpen"
+      class="fixed inset-0 z-50 grid place-items-center bg-zinc-950/35 p-6 backdrop-blur-[2px]"
+      @click.self="isCreateOpen = false"
+    >
+      <form
+        class="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-5 shadow-float"
+        @submit.prevent="createTemplate"
+      >
+        <header class="mb-5 flex items-start justify-between">
+          <div>
+            <h2 class="text-[14px] font-semibold text-zinc-900">新建抽取模板</h2>
+            <p class="mt-1 text-[11px] text-zinc-500">创建草稿后进入模板编辑器配置字段。</p>
+          </div>
+          <DmButton
+            variant="ghost"
+            icon-only
+            aria-label="关闭新建模板窗口"
+            @click="isCreateOpen = false"
           >
-        </span>
-        <code>{{ item.source_version_id.slice(0, 8) }}…</code>
-        <DmStatus
-          :tone="getStatusTone(item.conversion_status)"
-          :label="getStatusLabel(item.conversion_status)"
+            <AppIcon name="close" class="size-4" />
+          </DmButton>
+        </header>
+        <DmTextField
+          id="template-name"
+          v-model="templateName"
+          label="模板名称"
+          placeholder="例如：标准采购合同 v3"
+          autofocus
+          :maxlength="80"
+          required
         />
-        <strong>{{ item.current_version_id ? '已生成' : '—' }}</strong>
-        <AppIcon name="arrow" />
-      </RouterLink>
-    </section>
-    <section v-else class="empty-register">
-      <span class="paper-stack" aria-hidden="true"><i></i><i></i><i></i></span>
-      <h2>模板登记簿还是空的</h2>
-      <p>请从“原始文档”详情页选择一个已上传版本，再点击“转换为模板”。</p>
-      <RouterLink :to="{ name: RouteName.SourceList }">前往原始文档 →</RouterLink>
-    </section>
+        <footer class="mt-6 flex justify-end gap-2">
+          <DmButton variant="secondary" @click="isCreateOpen = false">取消</DmButton
+          ><DmButton type="submit">创建草稿</DmButton>
+        </footer>
+      </form>
+    </div>
   </section>
 </template>
-
-<style src="./styles.css"></style>

@@ -687,20 +687,6 @@
   gap: 7px;
 }
 
-.upload-modal-close {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  color: var(--dm-color-zinc-500);
-  border: 1px solid var(--dm-color-border);
-  border-radius: 6px;
-  background: #fff;
-  font-size: 17px;
-  cursor: pointer;
-}
-
 .drop-zone {
   position: relative;
   display: grid;

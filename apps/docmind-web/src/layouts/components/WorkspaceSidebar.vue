@@ -4,6 +4,7 @@ import { RouterLink, type RouteLocationRaw } from 'vue-router';
 
 import AppIcon from '@/components/AppIcon.vue';
 import { RouteName } from '@/router/constants.js';
+import { DmButton, DmSelect } from '@/ui';
 
 interface NavigationItem {
   label: string;
@@ -87,11 +88,16 @@ const handleWorkspaceChange = (event: Event): void => {
     <label class="sidebar-workspace-switcher">
       <span class="workspace-mark" aria-hidden="true"><AppIcon name="brain-circuit" /></span>
       <span class="dm-sr-only">当前工作区</span>
-      <select :value="selectedWorkspaceId ?? ''" @change="handleWorkspaceChange">
+      <DmSelect
+        id="workspace-switcher"
+        :model-value="selectedWorkspaceId ?? ''"
+        aria-label="当前工作区"
+        @change="handleWorkspaceChange"
+      >
         <option v-for="workspace in workspaces" :key="workspace.id" :value="workspace.id">
           {{ workspace.name }}
         </option>
-      </select>
+      </DmSelect>
       <AppIcon name="chevrons-up-down" aria-hidden="true" />
     </label>
 
@@ -125,9 +131,15 @@ const handleWorkspaceChange = (event: Event): void => {
           {{ displayName.trim().slice(0, 1) || 'U' }}
         </span>
         <strong :title="email">{{ displayName }}</strong>
-        <button type="button" aria-label="退出登录" title="退出登录" @click="emit('logout')">
-          <AppIcon name="settings" />
-        </button>
+        <DmButton
+          variant="ghost"
+          icon-only
+          aria-label="退出登录"
+          title="退出登录"
+          @click="emit('logout')"
+        >
+          <AppIcon name="logout" />
+        </DmButton>
       </div>
     </footer>
   </aside>

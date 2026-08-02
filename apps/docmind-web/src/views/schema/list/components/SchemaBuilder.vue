@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { FIELD_SENSITIVITY_LEVELS, SCHEMA_VALUE_TYPES } from '@/contracts';
-import { DmButton, DmTextField } from '@/ui';
+import AppIcon from '@/components/AppIcon.vue';
+import { DmButton, DmCheckbox, DmInput, DmSelect, DmTextField, DmTextarea } from '@/ui';
 
 import type { EditableSchemaField } from '../model/schema-form.js';
 
@@ -51,74 +52,95 @@ const emit = defineEmits<{
       <article v-for="(field, index) in fields" :key="field.clientId" class="field-row" role="row">
         <div class="field-position">
           <strong>{{ String(index + 1).padStart(2, '0') }}</strong>
-          <button
-            type="button"
+          <DmButton
+            variant="ghost"
+            icon-only
             :disabled="index === 0"
             aria-label="上移字段"
             @click="emit('move-field', index, -1)"
           >
-            ↑
-          </button>
-          <button
-            type="button"
+            <AppIcon name="arrow-up" />
+          </DmButton>
+          <DmButton
+            variant="ghost"
+            icon-only
             :disabled="index === fields.length - 1"
             aria-label="下移字段"
             @click="emit('move-field', index, 1)"
           >
-            ↓
-          </button>
+            <AppIcon name="arrow-down" />
+          </DmButton>
         </div>
         <div class="field-primary">
           <label
-            >字段 Key<input v-model="field.key" required placeholder="contract_number"
+            >字段 Key<DmInput v-model="field.key" required placeholder="contract_number"
           /></label>
           <label
-            >字段描述<textarea
+            >字段描述<DmTextarea
               v-model="field.description"
-              rows="2"
+              :rows="2"
               placeholder="告诉模型这个字段是什么"
-            ></textarea>
+            />
           </label>
           <label
-            >抽取提示（可选）<input
+            >抽取提示（可选）<DmInput
               v-model="field.extractionHint"
               placeholder="例如：通常位于合同首页右上角"
           /></label>
         </div>
         <div class="field-classification">
           <label
-            >数据类型<select v-model="field.valueType">
+            >数据类型<DmSelect
+              :id="`schema-value-type-${field.clientId}`"
+              v-model="field.valueType"
+            >
               <option v-for="type in SCHEMA_VALUE_TYPES" :key="type" :value="type">
                 {{ type }}
               </option>
-            </select></label
+            </DmSelect></label
           >
           <label
-            >敏感等级<select v-model="field.sensitivity">
+            >敏感等级<DmSelect
+              :id="`schema-sensitivity-${field.clientId}`"
+              v-model="field.sensitivity"
+            >
               <option v-for="level in FIELD_SENSITIVITY_LEVELS" :key="level" :value="level">
                 {{ level }}
               </option>
-            </select></label
+            </DmSelect></label
           >
           <label v-if="field.defaultEnabled"
-            >默认值<input v-model="field.defaultValue" placeholder="找不到字段时使用"
+            >默认值<DmInput v-model="field.defaultValue" placeholder="找不到字段时使用"
           /></label>
         </div>
         <div class="field-behavior">
-          <label><input v-model="field.required" type="checkbox" />必填</label>
-          <label><input v-model="field.nullable" type="checkbox" />允许 null</label>
-          <label><input v-model="field.defaultEnabled" type="checkbox" />设置默认值</label>
-          <button
-            type="button"
-            class="danger-link"
+          <DmCheckbox
+            :id="`schema-required-${field.clientId}`"
+            v-model="field.required"
+            label="必填"
+          />
+          <DmCheckbox
+            :id="`schema-nullable-${field.clientId}`"
+            v-model="field.nullable"
+            label="允许 null"
+          />
+          <DmCheckbox
+            :id="`schema-default-${field.clientId}`"
+            v-model="field.defaultEnabled"
+            label="设置默认值"
+          />
+          <DmButton
+            variant="danger-ghost"
             :disabled="fields.length === 1"
             @click="emit('remove-field', field.clientId)"
           >
             删除字段
-          </button>
+          </DmButton>
         </div>
       </article>
     </div>
-    <DmButton type="button" variant="secondary" @click="emit('add-field')"> ＋ 添加字段 </DmButton>
+    <DmButton type="button" variant="secondary" @click="emit('add-field')">
+      <AppIcon name="plus" />添加字段
+    </DmButton>
   </form>
 </template>

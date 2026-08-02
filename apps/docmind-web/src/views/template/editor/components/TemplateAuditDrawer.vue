@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TemplateVersion } from '@/contracts';
+import { DmInteractiveSurface } from '@/ui';
 
 import type { TemplateDiffChange } from '../model/template-document.js';
 
@@ -19,10 +20,9 @@ const emit = defineEmits<{
       <summary>
         转换告警 <strong>{{ version.warnings.length }}</strong>
       </summary>
-      <button
+      <DmInteractiveSurface
         v-for="warning in version.warnings"
         :key="warning.id"
-        type="button"
         :class="`warning-${warning.severity}`"
         @click="emit('focus-node', warning.source_node_id, warning.page_number)"
       >
@@ -32,7 +32,7 @@ const emit = defineEmits<{
           {{ warning.page_number ? `P${warning.page_number}` : '全局' }} ·
           {{ warning.blocking ? '阻断发布' : '可接受回退' }}
         </small>
-      </button>
+      </DmInteractiveSurface>
       <p v-if="version.warnings.length === 0">未发现版式转换告警。</p>
     </details>
     <details>

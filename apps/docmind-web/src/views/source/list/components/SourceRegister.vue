@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SourceDocument } from '@/contracts';
-import { DmStatus } from '@/ui';
+import { DmButton, DmInput, DmInteractiveSurface, DmStatus } from '@/ui';
 
 import AppIcon from '@/components/AppIcon.vue';
 import InlineNotice from '@/components/InlineNotice.vue';
@@ -40,43 +40,49 @@ const emit = defineEmits<{
   <section class="source-register" aria-label="文档登记簿">
     <div class="source-list-controls">
       <div class="source-tabs" role="group" aria-label="文档状态筛选">
-        <button
-          type="button"
+        <DmButton
+          variant="ghost"
           :class="{ active: sourceFilter === 'all' }"
           @click="sourceFilter = 'all'"
         >
           全部文档 <span>{{ sources.length }}</span>
-        </button>
-        <button
-          type="button"
+        </DmButton>
+        <DmButton
+          variant="ghost"
           :class="{ active: sourceFilter === 'registered' }"
           @click="sourceFilter = 'registered'"
         >
           已登记
-        </button>
-        <button
-          type="button"
+        </DmButton>
+        <DmButton
+          variant="ghost"
           :class="{ active: sourceFilter === 'pending' }"
           @click="sourceFilter = 'pending'"
         >
           待上传
-        </button>
+        </DmButton>
       </div>
       <div class="source-control-actions">
         <label class="source-search">
           <AppIcon name="search" aria-hidden="true" />
           <span class="dm-sr-only">搜索文档</span>
-          <input v-model="searchQuery" type="search" placeholder="搜索文档名称" />
+          <DmInput
+            v-model="searchQuery"
+            appearance="unstyled"
+            type="search"
+            placeholder="搜索文档名称"
+          />
         </label>
-        <button
+        <DmButton
           class="source-refresh"
-          type="button"
+          variant="ghost"
+          icon-only
           :disabled="isLoading"
           aria-label="刷新文档列表"
           @click="emit('reload')"
         >
           <AppIcon name="refresh" />
-        </button>
+        </DmButton>
       </div>
     </div>
 
@@ -103,12 +109,11 @@ const emit = defineEmits<{
       <div v-else-if="filteredSources.length === 0" class="source-no-results">
         <strong>没有找到匹配的文档</strong>
         <p>试试更短的名称，或清除当前筛选条件。</p>
-        <button type="button" class="text-action" @click="emit('reset')">显示全部文档</button>
+        <DmButton variant="accent-ghost" @click="emit('reset')">显示全部文档</DmButton>
       </div>
       <ol v-else class="source-list">
         <li v-for="source in pagedSources" :key="source.id">
-          <button
-            type="button"
+          <DmInteractiveSurface
             class="source-row"
             :class="{ 'source-row--selected': selectedSourceId === source.id }"
             :aria-pressed="selectedSourceId === source.id"
@@ -127,7 +132,7 @@ const emit = defineEmits<{
             />
             <span class="source-updated-at">{{ formatSourceDate(source.updated_at) }}</span>
             <code>{{ getSourceVersionLabel(source) }}</code>
-          </button>
+          </DmInteractiveSurface>
         </li>
       </ol>
     </div>
@@ -138,47 +143,47 @@ const emit = defineEmits<{
           共 {{ filteredSources.length }} 条 · 显示 {{ pageStart }}–{{ pageEnd }}
         </span>
         <span v-else>没有匹配的文档</span>
-        <button
+        <DmButton
           v-if="searchQuery || sourceFilter !== 'all'"
-          type="button"
+          variant="accent-ghost"
           class="text-action"
           @click="emit('reset')"
         >
           清除筛选
-        </button>
+        </DmButton>
       </div>
       <nav
         v-if="filteredSources.length > 0 && totalPages > 1"
         class="source-pagination"
         aria-label="文档列表分页"
       >
-        <button
-          type="button"
+        <DmButton
+          variant="secondary"
           aria-label="上一页"
           :disabled="safeCurrentPage === 1"
           @click="currentPage = safeCurrentPage - 1"
         >
           上一页
-        </button>
-        <button
+        </DmButton>
+        <DmButton
           v-for="page in pageNumbers"
           :key="page"
-          type="button"
+          :variant="safeCurrentPage === page ? 'primary' : 'secondary'"
           :class="{ active: safeCurrentPage === page }"
           :aria-current="safeCurrentPage === page ? 'page' : undefined"
           :aria-label="`第 ${page} 页`"
           @click="currentPage = page"
         >
           {{ page }}
-        </button>
-        <button
-          type="button"
+        </DmButton>
+        <DmButton
+          variant="secondary"
           aria-label="下一页"
           :disabled="safeCurrentPage === totalPages"
           @click="currentPage = safeCurrentPage + 1"
         >
           下一页
-        </button>
+        </DmButton>
       </nav>
     </footer>
   </section>

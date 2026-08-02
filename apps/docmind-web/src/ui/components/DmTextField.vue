@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import { DmInput } from '@/components/dm';
+
 type DmTextFieldType = 'text' | 'email' | 'tel' | 'password' | 'number' | 'date';
 
 const props = withDefaults(
@@ -15,6 +17,8 @@ const props = withDefaults(
     required?: boolean;
     disabled?: boolean;
     readonly?: boolean;
+    autofocus?: boolean;
+    maxlength?: number;
   }>(),
   {
     type: 'text',
@@ -25,6 +29,7 @@ const props = withDefaults(
     required: false,
     disabled: false,
     readonly: false,
+    autofocus: false,
   },
 );
 
@@ -43,10 +48,6 @@ const describedBy = computed(() =>
     .filter((value): value is string => value !== null)
     .join(' '),
 );
-
-const handleInput = (event: Event): void => {
-  modelValue.value = (event.target as HTMLInputElement).value;
-};
 </script>
 
 <template>
@@ -55,19 +56,21 @@ const handleInput = (event: Event): void => {
       {{ label }}<span v-if="required" class="dm-field__required" aria-hidden="true"> *</span>
     </label>
     <p v-if="description" :id="descriptionId" class="dm-field__description">{{ description }}</p>
-    <input
+    <DmInput
       :id="id"
+      v-model="modelValue"
+      appearance="unstyled"
       class="dm-field__control"
-      :value="modelValue"
       :type="type"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
       :required="required"
       :disabled="disabled"
       :readonly="readonly"
+      :autofocus="autofocus"
+      :maxlength="maxlength"
       :aria-invalid="error.length > 0 || undefined"
       :aria-describedby="describedBy || undefined"
-      @input="handleInput"
       @blur="emit('blur', $event)"
     />
     <p v-if="error" :id="errorId" class="dm-field__error" role="alert">{{ error }}</p>

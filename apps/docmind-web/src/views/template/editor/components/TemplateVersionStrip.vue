@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TemplateVersion, TemplateVersionId } from '@/contracts';
-import { DmButton } from '@/ui';
+import { DmButton, DmInteractiveSurface } from '@/ui';
 
 defineProps<{
   versions: TemplateVersion[];
@@ -18,17 +18,16 @@ const emit = defineEmits<{
 <template>
   <section class="template-version-strip" aria-label="模板版本历史">
     <div><span>版本历史</span><small>选择旧版本可查看后端 Diff 或恢复</small></div>
-    <button
+    <DmInteractiveSurface
       v-for="version in versions"
       :key="version.id"
-      type="button"
       :class="{ active: version.id === selectedVersionId }"
       @click="emit('select-version', version)"
     >
       <strong>V{{ version.version_number }}</strong>
       <span>{{ version.status }}</span>
       <small>{{ new Date(version.created_at).toLocaleDateString('zh-CN') }}</small>
-    </button>
+    </DmInteractiveSurface>
     <DmButton
       v-if="!isCurrentVersion"
       variant="secondary"
