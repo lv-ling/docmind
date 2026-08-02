@@ -3,33 +3,59 @@ import { ScanLine, Sparkles, UserCheck } from 'lucide-vue-next';
 </script>
 
 <template>
-  <ol class="login-workflow login-reveal login-delay-200" aria-label="文档智能处理流程">
-    <li class="login-workflow__step">
-      <span class="login-workflow__icon" aria-hidden="true">
+  <ol
+    class="relative m-0 grid list-none gap-10 p-0 before:absolute before:top-4 before:bottom-4 before:left-3.5 before:w-px before:bg-linear-to-b before:from-zinc-200 before:via-brand-300 before:to-zinc-200 before:content-[''] translate-y-2 opacity-0 animate-dm-reveal animate-delay-200 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+    aria-label="文档智能处理流程"
+  >
+    <li class="group relative flex items-start gap-6">
+      <span
+        class="relative z-1 inline-flex size-7 shrink-0 items-center justify-center rounded-round border border-zinc-200 bg-paper text-zinc-400 shadow-subtle transition-transform duration-page ease-dm group-hover:scale-110 motion-reduce:transition-none"
+        aria-hidden="true"
+      >
         <ScanLine :size="14" :stroke-width="2" />
       </span>
-      <span class="login-workflow__copy">
-        <strong>文档深度解析</strong>
-        <small>Document Understanding</small>
+      <span class="grid gap-1 pt-1">
+        <strong class="text-[0.8125rem] font-medium tracking-[0.025em] text-zinc-800">
+          文档深度解析
+        </strong>
+        <small class="font-mono text-[0.6875rem] tracking-[-0.025em] text-zinc-400">
+          Document Understanding
+        </small>
       </span>
     </li>
-    <li class="login-workflow__step login-workflow__step--active">
-      <span class="login-workflow__icon" aria-hidden="true">
+    <li class="group relative flex items-start gap-6">
+      <span
+        class="relative z-1 inline-flex size-7 shrink-0 items-center justify-center rounded-round border border-brand-200 bg-brand-50 text-brand-600 shadow-brand-glow transition-transform duration-page ease-dm group-hover:scale-110 motion-reduce:transition-none"
+        aria-hidden="true"
+      >
         <Sparkles :size="14" :stroke-width="2" />
-        <i class="login-workflow__pulse"></i>
+        <i
+          class="absolute -inset-px rounded-round border border-brand-400 opacity-20 animate-dm-ping motion-reduce:animate-none"
+        ></i>
       </span>
-      <span class="login-workflow__copy">
-        <strong>结构化智能抽取</strong>
-        <small>AI Extraction</small>
+      <span class="grid gap-1 pt-1">
+        <strong class="text-[0.8125rem] font-medium tracking-[0.025em] text-brand-600">
+          结构化智能抽取
+        </strong>
+        <small class="font-mono text-[0.6875rem] tracking-[-0.025em] text-brand-muted">
+          AI Extraction
+        </small>
       </span>
     </li>
-    <li class="login-workflow__step">
-      <span class="login-workflow__icon" aria-hidden="true">
+    <li class="group relative flex items-start gap-6">
+      <span
+        class="relative z-1 inline-flex size-7 shrink-0 items-center justify-center rounded-round border border-zinc-200 bg-paper text-zinc-400 shadow-subtle transition-transform duration-page ease-dm group-hover:scale-110 motion-reduce:transition-none"
+        aria-hidden="true"
+      >
         <UserCheck :size="14" :stroke-width="2" />
       </span>
-      <span class="login-workflow__copy">
-        <strong>人工协作复核</strong>
-        <small>Human Review</small>
+      <span class="grid gap-1 pt-1">
+        <strong class="text-[0.8125rem] font-medium tracking-[0.025em] text-zinc-800">
+          人工协作复核
+        </strong>
+        <small class="font-mono text-[0.6875rem] tracking-[-0.025em] text-zinc-400">
+          Human Review
+        </small>
       </span>
     </li>
   </ol>

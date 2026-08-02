@@ -75,4 +75,58 @@ No actionable P0, P1, or P2 mismatch remains. The only visible source difference
 
 No additional visual polish is recommended; changing the layout or styling further would move away from the supplied prototype.
 
+Login QA result: passed
+
+---
+
+# DocMind Workspace Design System Alignment QA
+
+## Comparison target
+
+- Source visual truth: `C:\Users\260713201\Downloads\docmind_premium_workspace (3).html`, Workspace view.
+- Source screenshot: `docs/visual-alignment/prototype-workspace.png`.
+- Pre-alignment screenshot: `docs/visual-alignment/vue-workspace-after.png`.
+- Implementation screenshot: `docs/visual-alignment/vue-workspace-design-system.png`.
+- Viewport: 1440 x 900 CSS pixels.
+- Source and implementation images: 1440 x 900 pixels, normalized at 1x density.
+- State: authenticated Workspace overview, light theme, default card state after reveal animation.
+
+## Full-view comparison evidence
+
+- The previously accepted 220 px sidebar, 48 px header, 24 px page padding, 8/4 content grid, card geometry, information hierarchy, content order, and Zinc/Indigo color system remain unchanged.
+- The primary and AI columns retain the same origin, width, vertical rhythm, and card dimensions after the icon and control pass.
+- Standard Workspace controls now share the prototype's 30 px height, 12 px label, 6 px radius, 12 px horizontal padding, 14 px icon, and 6 px icon-label gap.
+
+## Focused region comparison evidence
+
+- Sidebar: Lucide `brain-circuit`, `chevrons-up-down`, `layout-grid`, `files`, `cpu`, `check-square`, `layers`, `sliders-horizontal`, and `settings` match the prototype icon choices. Icons remain 12/14/16 px by context with 1.8 stroke width.
+- Workspace actions: `list-checks` and `play` replace semantic approximations. Their optical baselines now align with the 12 px labels through a shared inline-flex label wrapper.
+- Review cards: `file-text`, `file`, `check-circle-2`, `bot`, `arrow-right`, and `shield-alert` match the source. Compact action controls use the same control height, radius, padding, gap, and icon scale without changing the card layout.
+- Pipeline and AI insights: `loader-2`, `activity`, `lightbulb`, `trending-up`, and `chevron-right` match the prototype; the loader retains the restrained spin state.
+
+## Findings
+
+- No actionable P0, P1, or P2 mismatch remains.
+- P3: Windows/browser font antialiasing may produce subpixel differences in small Chinese labels; it does not change geometry or hierarchy.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing Inter/system Chinese family and the accepted size scale remain unchanged. Button labels use 12 px, medium weight, and a centered one-line baseline; navigation headings and active labels now match the prototype weights and tracking.
+- Spacing and layout rhythm: no page or card structure changed. Icon-label gaps and button internals were normalized without shifting the accepted grid.
+- Colors and visual tokens: Zinc, Brand Indigo, Amber, and Emerald usage remains unchanged; navigation icon colors match active/rest prototype states.
+- Image and icon fidelity: the screen has no raster content. Hand-authored icon paths were removed from `AppIcon`; all visible Workspace icons now render from `lucide-vue-next` with a 1.8 stroke width.
+- Copy and content: unchanged.
+
+## Comparison history
+
+1. Before: semantic custom SVG approximations were used for several icons; the review-queue and continue-review actions did not use the prototype's `list-checks` and `play` icons, and the shared button label wrapper did not guarantee a consistent icon-text baseline.
+2. Final: exact Lucide mappings, context-specific 12/14/16 px sizes, 1.8 stroke width, standardized 30 px controls, and aligned navigation weights were applied. Same-state 1440 x 900 comparison shows no layout regression or actionable visual mismatch.
+
+## Interaction verification
+
+- The existing authentication flow reached `/workbench/overview` without auth or API changes.
+- The hidden review action remains available and opened the existing review dialog.
+- Closing the dialog restored the verified overview state.
+- No application runtime error surfaced during the verified route and interaction path.
+
 final result: passed

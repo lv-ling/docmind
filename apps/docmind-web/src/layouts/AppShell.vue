@@ -107,7 +107,7 @@ watch(
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: 215px minmax(0, 1fr);
+  grid-template-columns: var(--dm-layout-sidebar-width) minmax(0, 1fr);
   width: 100%;
   min-height: 100dvh;
   color: var(--dm-color-ink);
@@ -120,7 +120,7 @@ watch(
 
 .workspace-content {
   display: grid;
-  grid-template-rows: 45px minmax(0, 1fr);
+  grid-template-rows: var(--dm-layout-header-height) minmax(0, 1fr);
   min-width: 0;
   height: 100dvh;
   overflow: hidden;
@@ -132,7 +132,9 @@ watch(
   padding: 0;
   overflow: auto;
   background:
-    radial-gradient(circle at 96% 0%, rgb(99 102 241 / 5%), transparent 38%), var(--dm-color-paper);
+    radial-gradient(circle at top right, rgb(99 102 241 / 5%), transparent 60%),
+    radial-gradient(circle at bottom left, rgb(245 158 11 / 2%), transparent 40%),
+    var(--dm-color-paper);
 }
 
 .workspace-sidebar-backdrop {

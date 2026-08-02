@@ -75,7 +75,7 @@ describe('login page', () => {
     await flushPromises();
 
     expect(workspaceSpy).toHaveBeenCalledOnce();
-    expect(wrapper.get('main').classes()).toContain('login-layout--leaving');
+    expect(wrapper.get('main').classes()).toContain('opacity-0');
 
     await vi.advanceTimersByTimeAsync(700);
     await flushPromises();

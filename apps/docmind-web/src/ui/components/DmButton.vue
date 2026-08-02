@@ -36,7 +36,11 @@ const handleClick = (event: MouseEvent): void => {
 
 <template>
   <button
-    :class="['dm-button', `dm-button--${variant}`, `dm-button--${size}`]"
+    :class="[
+      'dm-button inline-flex h-[30px] min-h-[30px] items-center justify-center gap-1.5 rounded-compact px-3 py-0 text-[12px] leading-none font-medium [&_.app-icon]:size-3.5 [&_.dm-button__label]:inline-flex [&_.dm-button__label]:items-center [&_.dm-button__label]:gap-1.5 [&_.dm-button__label]:leading-none',
+      `dm-button--${variant}`,
+      `dm-button--${size}`,
+    ]"
     :type="type"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"

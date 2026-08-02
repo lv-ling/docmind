@@ -1,23 +1,123 @@
-:root {
-  --dm-color-canvas: #edf2f4;
+:root,
+.dm-theme {
+  color-scheme: light;
+
+  /* Zinc — neutral surfaces and typography */
+  --dm-color-zinc-50: #fafafa;
+  --dm-color-zinc-100: #f4f4f5;
+  --dm-color-zinc-200: #e4e4e7;
+  --dm-color-zinc-300: #d4d4d8;
+  --dm-color-zinc-400: #a1a1aa;
+  --dm-color-zinc-500: #71717a;
+  --dm-color-zinc-600: #52525b;
+  --dm-color-zinc-700: #3f3f46;
+  --dm-color-zinc-800: #27272a;
+  --dm-color-zinc-900: #18181b;
+  --dm-color-zinc-950: #09090b;
+
+  /* Brand — DocMind AI indigo */
+  --dm-color-brand-50: #eef2ff;
+  --dm-color-brand-100: #e0e7ff;
+  --dm-color-brand-200: #c7d2fe;
+  --dm-color-brand-300: #a5b4fc;
+  --dm-color-brand-400: #818cf8;
+  --dm-color-brand-500: #6366f1;
+  --dm-color-brand-600: #4f46e5;
+  --dm-color-brand-700: #4338ca;
+  --dm-color-brand-800: #3730a3;
+  --dm-color-brand-900: #312e81;
+  --dm-color-brand-muted: rgb(from var(--dm-color-brand-400) r g b / 70%);
+  --dm-color-brand-focus: rgb(from var(--dm-color-brand-500) r g b / 35%);
+  --dm-color-brand-ring: rgb(from var(--dm-color-brand-100) r g b / 50%);
+
+  /* Semantic color aliases retained for existing pages and components */
+  --dm-color-canvas: var(--dm-color-zinc-50);
   --dm-color-paper: #fff;
-  --dm-color-paper-muted: #f5f8f9;
-  --dm-color-ink: #18263a;
-  --dm-color-ink-muted: #627286;
-  --dm-color-border: #d9e2e8;
-  --dm-color-border-strong: #aebdca;
-  --dm-color-brand: #164a72;
-  --dm-color-brand-strong: #0d3455;
-  --dm-color-accent: #e96f3d;
-  --dm-color-focus: #0f83b8;
-  --dm-color-success: #208365;
-  --dm-color-warning: #a76b11;
-  --dm-color-danger: #bd4d4a;
-  --dm-color-control-border: #b7cbd5;
-  --dm-color-status-border: transparent;
-  --dm-color-status-surface: #eef4f6;
-  --dm-radius-small: 0.5rem;
-  --dm-radius-medium: 1rem;
-  --dm-shadow-float: 0 1.25rem 3.5rem rgb(25 53 76 / 12%);
-  --dm-shadow-primary: 0 0.35rem 0.9rem rgb(22 74 114 / 18%);
+  --dm-color-paper-muted: var(--dm-color-zinc-100);
+  --dm-color-ink: var(--dm-color-zinc-900);
+  --dm-color-ink-muted: var(--dm-color-zinc-500);
+  --dm-color-border: var(--dm-color-zinc-200);
+  --dm-color-border-strong: var(--dm-color-zinc-300);
+  --dm-color-border-subtle: rgb(from var(--dm-color-zinc-200) r g b / 60%);
+  --dm-color-brand: var(--dm-color-brand-600);
+  --dm-color-brand-strong: var(--dm-color-brand-700);
+  --dm-color-brand-soft: var(--dm-color-brand-50);
+  --dm-color-accent: var(--dm-color-brand-500);
+  --dm-color-focus: var(--dm-color-brand-500);
+  --dm-color-success: #059669;
+  --dm-color-warning: #d97706;
+  --dm-color-danger: #dc2626;
+  --dm-color-danger-strong: #b91c1c;
+  --dm-color-danger-border: #fecaca;
+  --dm-color-danger-soft: #fef2f2;
+  --dm-color-diff-insert: var(--dm-color-success);
+  --dm-color-diff-delete: var(--dm-color-danger);
+  --dm-color-control-border: var(--dm-color-border);
+  --dm-color-status-border: var(--dm-color-border);
+  --dm-color-status-surface: var(--dm-color-paper-muted);
+
+  /* Typography */
+  --dm-font-ui:
+    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'Microsoft YaHei',
+    sans-serif;
+  --dm-font-document: 'Noto Serif SC', 'Songti SC', 'Times New Roman', serif;
+  --dm-font-mono: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+
+  /* Four-pixel spacing scale, including the dense half steps used by the prototype */
+  --dm-space-0-5: 2px;
+  --dm-space-1: 4px;
+  --dm-space-1-5: 6px;
+  --dm-space-2: 8px;
+  --dm-space-2-5: 10px;
+  --dm-space-3: 12px;
+  --dm-space-4: 16px;
+  --dm-space-5: 20px;
+  --dm-space-6: 24px;
+  --dm-space-8: 32px;
+  --dm-space-10: 40px;
+  --dm-space-12: 48px;
+
+  /* Shape and elevation */
+  --dm-radius-xsmall: 4px;
+  --dm-radius-small: 5px;
+  --dm-radius-compact: 6px;
+  --dm-radius-medium: 8px;
+  --dm-radius-large: 12px;
+  --dm-radius-round: 999px;
+  --dm-shadow-subtle: 0 1px 2px rgb(0 0 0 / 5%);
+  --dm-shadow-card: 0 1px 2px rgb(24 24 27 / 5%);
+  --dm-shadow-float: 0 12px 32px rgb(24 24 27 / 10%);
+  --dm-shadow-primary: none;
+  --dm-shadow-brand-glow: 0 0 12px rgb(from var(--dm-color-brand-500) r g b / 15%);
+  --dm-shadow-control-focus: 0 0 0 4px var(--dm-color-brand-ring);
+
+  /* Motion */
+  --dm-motion-interaction: 150ms;
+  --dm-motion-control: 200ms;
+  --dm-motion-fast: 140ms;
+  --dm-motion-normal: 220ms;
+  --dm-motion-page: 300ms;
+  --dm-motion-reveal: 500ms;
+  --dm-motion-enter: 600ms;
+  --dm-motion-exit: 700ms;
+  --dm-motion-cycle: 1000ms;
+  --dm-motion-shimmer: 1500ms;
+  --dm-motion-breathe: 3000ms;
+  --dm-motion-ping: 2500ms;
+  --dm-motion-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --dm-motion-easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --dm-motion-easing-standard: ease;
+  --dm-motion-easing-linear: linear;
+  --dm-motion-delay-100: 100ms;
+  --dm-motion-delay-150: 150ms;
+  --dm-motion-delay-200: 200ms;
+  --dm-motion-delay-300: 300ms;
+
+  /* Product workspace geometry */
+  --dm-layout-sidebar-width: 220px;
+  --dm-layout-header-height: 48px;
+  --dm-layout-content-max: 1600px;
+  --dm-review-document-pane: 42%;
+  --dm-review-fields-pane: 28%;
+  --dm-review-ai-pane: 30%;
 }

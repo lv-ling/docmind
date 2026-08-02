@@ -1,6 +1,7 @@
 import '@/ui/styles.css';
 import '@/styles/theme.css';
 import '@/styles/index.css';
+import '@/styles/tailwind.css';
 
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';

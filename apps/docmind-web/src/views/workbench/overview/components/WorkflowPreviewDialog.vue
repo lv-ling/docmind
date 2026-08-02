@@ -40,7 +40,7 @@ watch(
         @keydown.esc="emit('close')"
       >
         <header>
-          <span><AppIcon :name="kind === 'review' ? 'review' : 'cpu'" /></span>
+          <span><AppIcon :name="kind === 'review' ? 'list-checks' : 'cpu'" /></span>
           <div>
             <small>{{ kind === 'review' ? 'REVIEW WORKFLOW' : 'PROCESSING PIPELINE' }}</small>
             <h2 id="workflow-preview-title">{{ title }}</h2>

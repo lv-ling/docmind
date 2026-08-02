@@ -7,7 +7,10 @@ const { account, error, isLeaving, isSubmitting, password, sessionExpired, submi
 </script>
 
 <template>
-  <main class="login-layout" :class="{ 'login-layout--leaving': isLeaving }">
+  <main
+    class="fixed inset-0 z-100 grid min-h-screen min-w-256 grid-cols-2 overflow-hidden bg-paper font-ui text-zinc-900 transition-opacity duration-exit ease-standard animate-dm-page-fade motion-reduce:animate-none motion-reduce:transition-none"
+    :class="{ 'opacity-0': isLeaving }"
+  >
     <LoginBrandPanel />
     <LoginForm
       v-model:account="account"

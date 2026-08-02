@@ -6,6 +6,8 @@ export const RouteName = {
   SourceDetail: 'SourceDetail',
   SchemaList: 'SchemaList',
   ExtractionCreate: 'ExtractionCreate',
+  ExtractionProcessing: 'ExtractionProcessing',
+  ExtractionReviewQueue: 'ExtractionReviewQueue',
   ExtractionReview: 'ExtractionReview',
   TemplateList: 'TemplateList',
   TemplateEditor: 'TemplateEditor',

@@ -38,19 +38,17 @@ const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: '智能协作流程',
     items: [
-      { label: '工作台', icon: 'grid', routeName: RouteName.WorkbenchOverview },
-      { label: '文档中心', icon: 'documents', routeName: RouteName.SourceList },
+      { label: '工作台', icon: 'layout-grid', routeName: RouteName.WorkbenchOverview },
+      { label: '文档中心', icon: 'files', routeName: RouteName.SourceList },
       {
         label: 'AI 处理中心',
         icon: 'cpu',
-        routeName: RouteName.WorkbenchOverview,
-        hash: '#workbench-pipeline',
+        routeName: RouteName.ExtractionProcessing,
       },
       {
         label: '审核中心',
-        icon: 'review',
-        routeName: RouteName.WorkbenchOverview,
-        hash: '#workbench-attention',
+        icon: 'check-square',
+        routeName: RouteName.ExtractionReviewQueue,
         badge: '3',
       },
     ],
@@ -58,8 +56,8 @@ const NAVIGATION_GROUPS: NavigationGroup[] = [
   {
     label: '规则与知识',
     items: [
-      { label: '抽取模板', icon: 'template', routeName: RouteName.TemplateList },
-      { label: '配置中心', icon: 'settings', routeName: RouteName.SchemaList },
+      { label: '抽取模板', icon: 'layers', routeName: RouteName.TemplateList },
+      { label: '配置中心', icon: 'sliders-horizontal', routeName: RouteName.SchemaList },
     ],
   },
 ];
@@ -87,14 +85,14 @@ const handleWorkspaceChange = (event: Event): void => {
     :class="{ 'workspace-sidebar--open': isOpen }"
   >
     <label class="sidebar-workspace-switcher">
-      <span class="workspace-mark" aria-hidden="true"><AppIcon name="bot" /></span>
+      <span class="workspace-mark" aria-hidden="true"><AppIcon name="brain-circuit" /></span>
       <span class="dm-sr-only">当前工作区</span>
       <select :value="selectedWorkspaceId ?? ''" @change="handleWorkspaceChange">
         <option v-for="workspace in workspaces" :key="workspace.id" :value="workspace.id">
           {{ workspace.name }}
         </option>
       </select>
-      <AppIcon name="chevrons" aria-hidden="true" />
+      <AppIcon name="chevrons-up-down" aria-hidden="true" />
     </label>
 
     <div class="workspace-navigation">
@@ -104,7 +102,7 @@ const handleWorkspaceChange = (event: Event): void => {
           <RouterLink
             v-for="item in group.items"
             :key="item.label"
-            class="workspace-navigation__item"
+            class="workspace-navigation__item text-[13px] leading-5"
             :class="{ 'workspace-navigation__item--active': isNavigationActive(item) }"
             :to="getNavigationTarget(item)"
             @click="emit('navigate')"
@@ -128,7 +126,7 @@ const handleWorkspaceChange = (event: Event): void => {
         </span>
         <strong :title="email">{{ displayName }}</strong>
         <button type="button" aria-label="退出登录" title="退出登录" @click="emit('logout')">
-          <AppIcon name="logout" />
+          <AppIcon name="settings" />
         </button>
       </div>
     </footer>

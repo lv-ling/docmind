@@ -11,168 +11,63 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section id="workbench-pipeline" class="pipeline-panel" aria-labelledby="pipeline-title">
+  <section
+    id="workbench-pipeline"
+    class="pipeline-panel grid scroll-mt-18 gap-3"
+    aria-labelledby="pipeline-title"
+  >
     <header>
-      <h2 id="pipeline-title">处理管线</h2>
+      <h2 id="pipeline-title" class="m-0 text-[13px] leading-[19.5px] font-semibold text-zinc-800">
+        处理管线
+      </h2>
     </header>
 
-    <div class="pipeline-panel__list">
-      <button v-for="item in items" :key="item.id" type="button" @click="emit('open-item', item)">
-        <span class="pipeline-panel__engine" aria-hidden="true"><AppIcon name="cpu" /></span>
-        <span class="pipeline-panel__copy">
-          <strong>{{ item.title }}</strong>
-          <small>包含 {{ item.documentCount }} 份文件</small>
+    <div class="pipeline-panel__list grid grid-cols-2 gap-4 max-[700px]:grid-cols-1">
+      <button
+        v-for="item in items"
+        :key="item.id"
+        type="button"
+        class="grid min-w-0 cursor-pointer grid-cols-[24px_minmax(0,1fr)] gap-x-3 gap-y-0 rounded-md border border-brand-200/60 bg-brand-50/20 p-3 text-left shadow-subtle transition-[background-color,transform,box-shadow] duration-interaction ease-dm hover:-translate-y-px hover:bg-brand-50/50 hover:shadow-[0_5px_16px_rgb(99_102_241_/_7%)] motion-reduce:transition-none"
+        @click="emit('open-item', item)"
+      >
+        <span
+          class="pipeline-panel__engine mt-0.5 grid size-6 place-items-center rounded-xs border border-brand-200 bg-brand-100/50 text-brand-600 [&_.app-icon]:size-3"
+          aria-hidden="true"
+        >
+          <AppIcon name="cpu" />
         </span>
-        <span class="pipeline-panel__status">
-          <span><AppIcon name="activity" />{{ item.stageLabel }}</span>
-          <strong>{{ item.progress }}%</strong>
+        <span class="pipeline-panel__copy grid min-w-0 gap-0.5">
+          <strong
+            class="overflow-hidden text-[12px] leading-[18px] font-medium text-ellipsis whitespace-nowrap text-zinc-900"
+          >
+            {{ item.title }}
+          </strong>
+          <small
+            class="overflow-hidden text-[11px] leading-[16.5px] text-ellipsis whitespace-nowrap text-zinc-500"
+          >
+            包含 {{ item.documentCount }} 份文件
+          </small>
         </span>
-        <span class="pipeline-panel__progress" aria-hidden="true">
-          <i :style="{ width: `${item.progress}%` }"></i>
+        <span
+          class="pipeline-panel__status col-span-full mt-3 flex items-center justify-between gap-3 text-[11px] leading-[16.5px] text-zinc-600"
+        >
+          <span class="inline-flex items-center gap-1 [&_.app-icon]:size-3">
+            <AppIcon class="animate-dm-spin" name="loader-2" />{{ item.stageLabel }}
+          </span>
+          <strong class="font-mono text-[11px] font-medium text-brand-600">
+            {{ item.progress }}%
+          </strong>
+        </span>
+        <span
+          class="pipeline-panel__progress relative col-span-full mt-1.5 h-1 overflow-hidden rounded-full bg-zinc-200/80"
+          aria-hidden="true"
+        >
+          <i
+            class="absolute inset-y-0 left-0 rounded-full bg-brand-500 transition-[width] duration-control ease-dm motion-reduce:transition-none"
+            :style="{ width: `${item.progress}%` }"
+          ></i>
         </span>
       </button>
     </div>
   </section>
 </template>
-
-<style scoped>
-.pipeline-panel {
-  display: grid;
-  gap: 11px;
-  scroll-margin-top: 72px;
-}
-
-.pipeline-panel h2 {
-  margin: 0;
-  color: var(--dm-color-zinc-800);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.pipeline-panel__list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.pipeline-panel__list > button {
-  display: grid;
-  grid-template-columns: 31px minmax(0, 1fr);
-  gap: 10px;
-  min-width: 0;
-  padding: 12px;
-  text-align: left;
-  border: 1px solid #c7d2fe;
-  border-radius: var(--dm-radius-medium);
-  background: rgb(238 242 255 / 26%);
-  box-shadow: var(--dm-shadow-card);
-  cursor: pointer;
-  transition:
-    background var(--dm-motion-fast) var(--dm-motion-easing),
-    transform var(--dm-motion-fast) var(--dm-motion-easing),
-    box-shadow var(--dm-motion-fast) var(--dm-motion-easing);
-}
-
-.pipeline-panel__list > button:hover {
-  background: rgb(238 242 255 / 54%);
-  box-shadow: 0 5px 16px rgb(99 102 241 / 7%);
-  transform: translateY(-1px);
-}
-
-.pipeline-panel__engine {
-  display: grid;
-  place-items: center;
-  width: 31px;
-  height: 31px;
-  color: var(--dm-color-brand);
-  border: 1px solid #c7d2fe;
-  border-radius: 6px;
-  background: var(--dm-color-brand-soft);
-}
-
-.pipeline-panel__engine :deep(.app-icon) {
-  width: 15px;
-  height: 15px;
-}
-
-.pipeline-panel__copy {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.pipeline-panel__copy strong,
-.pipeline-panel__copy small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pipeline-panel__copy strong {
-  color: var(--dm-color-zinc-900);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.pipeline-panel__copy small {
-  color: var(--dm-color-zinc-500);
-  font-size: 11px;
-}
-
-.pipeline-panel__status {
-  display: flex;
-  grid-column: 1 / -1;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--dm-color-zinc-600);
-  font-size: 11px;
-}
-
-.pipeline-panel__status > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.pipeline-panel__status :deep(.app-icon) {
-  width: 13px;
-  height: 13px;
-}
-
-.pipeline-panel__status > strong {
-  color: var(--dm-color-brand);
-  font-family: var(--dm-font-mono);
-  font-size: 11px;
-}
-
-.pipeline-panel__progress {
-  position: relative;
-  grid-column: 1 / -1;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: var(--dm-color-zinc-200);
-}
-
-.pipeline-panel__progress i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: inherit;
-  background: var(--dm-color-accent);
-  transition: width var(--dm-motion-normal) var(--dm-motion-easing);
-}
-
-@media (max-width: 700px) {
-  .pipeline-panel__list {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pipeline-panel__progress i,
-  .pipeline-panel__list > button {
-    transition: none;
-  }
-}
-</style>

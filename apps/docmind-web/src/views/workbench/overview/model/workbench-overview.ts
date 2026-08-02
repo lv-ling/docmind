@@ -89,14 +89,14 @@ const FRONTEND_ATTENTION_ITEMS: WorkbenchAttentionItem[] = [
     actionLabel: '进入复核',
     extractionFields: [
       { label: '总金额', value: '¥ 5,000,000', isMonospace: true },
-      { label: '供应商（乙方）', value: '上海微盟企业发展有限公司' },
+      { label: '供应商 (乙方)', value: '上海微盟企业发展有限公司' },
       { label: '生效日期', value: '2023-01-01' },
     ],
     riskNotice: {
       title: 'AI 风险拦截：',
-      beforeHighlight: '违约金比例（',
+      beforeHighlight: '违约金比例 (',
       highlightedValue: '30%',
-      afterHighlight: '）超出企业最高阈值（20%），建议法务介入。',
+      afterHighlight: ') 超出企业最高阈值 (20%)，建议法务介入。',
     },
   },
   {

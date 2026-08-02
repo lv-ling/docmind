@@ -5,6 +5,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 import { RouteName } from '@/router/constants.js';
 import { SESSION_EXPIRED_EVENT, sessionExpiredLocation } from '@/session.js';
 import { useWorkspaceStore } from '@/stores/workspace.js';
+import { DmToastViewport } from '@/ui';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,4 +23,5 @@ onUnmounted(() => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessio
 
 <template>
   <RouterView />
+  <DmToastViewport />
 </template>

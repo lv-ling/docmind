@@ -2,7 +2,7 @@ import { renderToString } from '@vue/server-renderer';
 import { createSSRApp, h, type Component, type VNodeChild } from 'vue';
 import { describe, expect, it } from 'vitest';
 
-import { DmButton, DmSplitPane, DmStatus, DmTextField } from '@/ui';
+import { DmButton, DmProgress, DmSplitPane, DmStatus, DmTabs, DmTextField } from '@/ui';
 
 type TestSlots = Record<string, () => VNodeChild>;
 
@@ -60,6 +60,39 @@ describe('UI component rendering contracts', () => {
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('dm-status--success');
     expect(html).toContain('dm-status__dot" aria-hidden="true"');
+  });
+
+  it('clamps progress values and exposes the normalized percentage', async () => {
+    const html = await renderComponent(DmProgress, {
+      value: 130,
+      max: 100,
+      label: '实体抽取进度',
+      showValue: true,
+    });
+
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain('aria-label="实体抽取进度"');
+    expect(html).toContain('aria-valuenow="100"');
+    expect(html).toContain('aria-valuetext="100%"');
+    expect(html).toContain('width:100%');
+  });
+
+  it('renders controlled tabs with selected and disabled states', async () => {
+    const html = await renderComponent(DmTabs, {
+      modelValue: 'all',
+      label: '文档状态',
+      items: [
+        { value: 'all', label: '全部文档', count: 1204 },
+        { value: 'review', label: '待审核', count: 3 },
+        { value: 'archived', label: '已归档', disabled: true },
+      ],
+    });
+
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('aria-label="文档状态"');
+    expect(html).toContain('aria-selected="true"');
+    expect(html).toContain('dm-tabs__tab--active');
+    expect(html).toContain('disabled');
   });
 
   it('exposes keyboard-operable split pane semantics and panel controls', async () => {

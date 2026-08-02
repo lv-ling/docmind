@@ -5,25 +5,42 @@ import LoginWorkflowPreview from './LoginWorkflowPreview.vue';
 </script>
 
 <template>
-  <section class="login-brand-panel" aria-labelledby="login-brand-title">
-    <div class="login-brand-panel__logo login-reveal">
-      <span class="login-brand-panel__mark" aria-hidden="true">
+  <section
+    class="relative flex min-w-0 flex-col justify-between border-r border-border-subtle bg-zinc-50 p-16 max-[64rem]:p-12"
+    aria-labelledby="login-brand-title"
+  >
+    <div
+      class="relative z-1 flex translate-y-2 items-center gap-2.5 text-[1.125rem] font-semibold tracking-[-0.025em] text-zinc-900 opacity-0 animate-dm-reveal motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+    >
+      <span
+        class="inline-flex size-7 items-center justify-center rounded-xs bg-zinc-900 text-white shadow-subtle"
+        aria-hidden="true"
+      >
         <Zap :size="14" :stroke-width="2" />
       </span>
       <span>DocMind</span>
     </div>
 
-    <div class="login-brand-panel__content">
-      <h1 id="login-brand-title" class="login-reveal login-delay-100">
+    <div class="relative z-1 my-auto w-full max-w-112 pl-2">
+      <h1
+        id="login-brand-title"
+        class="mt-0 mr-0 mb-4 ml-0 translate-y-2 text-[2.25rem] leading-[1.2] font-semibold tracking-[-0.025em] text-zinc-900 opacity-0 animate-dm-reveal animate-delay-100 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+      >
         让复杂文档，<br />变成可信数据。
       </h1>
-      <p class="login-brand-panel__tagline login-reveal login-delay-150">
+      <p
+        class="mt-0 mr-0 mb-16 ml-0 translate-y-2 text-[0.6875rem] font-medium tracking-[0.2em] text-zinc-400 uppercase opacity-0 animate-dm-reveal animate-delay-150 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+      >
         AI Document Intelligence
       </p>
       <LoginWorkflowPreview />
     </div>
 
-    <p class="login-brand-panel__footer login-reveal login-delay-300">Enterprise AI Workspace</p>
+    <p
+      class="relative z-1 m-0 translate-y-2 text-[0.6875rem] text-zinc-400 opacity-0 animate-dm-reveal animate-delay-300 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+    >
+      Enterprise AI Workspace
+    </p>
   </section>
 </template>
 

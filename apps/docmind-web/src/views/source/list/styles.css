@@ -48,7 +48,7 @@
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 16px;
   align-items: start;
-  width: min(100%, 1500px);
+  width: min(100%, var(--dm-layout-content-max));
   padding: 20px 22px 24px;
   margin: 0 auto;
 }

@@ -52,27 +52,46 @@ const handleOpenConfig = async (): Promise<void> => {
 </script>
 
 <template>
-  <section class="workbench-overview">
-    <header class="workbench-overview__header">
+  <section
+    class="workbench-overview mx-auto grid w-full max-w-content gap-6 p-6 motion-reduce:animate-none max-[700px]:gap-[18px] max-[700px]:px-3.5 max-[700px]:py-[18px]"
+  >
+    <header
+      class="workbench-overview__header flex items-end justify-between gap-6 max-[700px]:flex-col max-[700px]:items-start max-[700px]:gap-3.5"
+    >
       <div>
-        <h1>工作台</h1>
-        <p>
-          <AppIcon name="sparkles" />
+        <h1 class="m-0 text-xl leading-7 font-semibold tracking-tight text-zinc-900">工作台</h1>
+        <p
+          class="mt-1 mb-0 flex items-center gap-1.5 text-[13px] leading-[19.5px] text-zinc-500 max-[700px]:items-start max-[700px]:text-[12px]"
+        >
+          <AppIcon class="size-3.5 shrink-0 text-brand-500" name="sparkles" />
           <span>
             AI 已自动处理
-            <strong>{{ overview.activitySummary.processedDocumentCount }}</strong>
+            <strong class="font-medium text-zinc-900">
+              {{ overview.activitySummary.processedDocumentCount }}
+            </strong>
             份新文档。发现
-            <mark>{{ overview.activitySummary.attentionCount }} 份</mark>
+            <mark class="rounded-xs bg-[#fffbeb] px-1 font-medium text-[#d97706]">
+              {{ overview.activitySummary.attentionCount }} 份
+            </mark>
             业务异常，需复核。
           </span>
         </p>
       </div>
-      <div class="workbench-overview__actions">
-        <DmButton variant="secondary" size="small" @click="handleOpenReviewQueue">
-          <AppIcon name="review" />审核队列
+      <div class="workbench-overview__actions flex shrink-0 gap-2">
+        <DmButton
+          class="h-[30px] min-h-[30px] gap-1.5 rounded-compact px-3 py-0 text-[12px] leading-none font-medium [&_.app-icon]:size-3.5"
+          variant="secondary"
+          size="small"
+          @click="handleOpenReviewQueue"
+        >
+          <AppIcon class="text-zinc-400" name="list-checks" />审核队列
         </DmButton>
-        <DmButton size="small" @click="handleStartContinuousReview">
-          <AppIcon name="arrow" />连续复核
+        <DmButton
+          class="h-[30px] min-h-[30px] gap-1.5 rounded-compact px-3 py-0 text-[12px] leading-none font-medium [&_.app-icon]:size-3.5"
+          size="small"
+          @click="handleStartContinuousReview"
+        >
+          <AppIcon name="play" />连续复核
         </DmButton>
       </div>
     </header>
@@ -88,8 +107,13 @@ const handleOpenConfig = async (): Promise<void> => {
       <i></i><i></i><i></i>
     </div>
 
-    <div v-else class="workbench-overview__grid">
-      <div class="workbench-overview__primary">
+    <div
+      v-else
+      class="workbench-overview__grid grid grid-cols-12 items-start gap-6 max-[1050px]:grid-cols-1"
+    >
+      <div
+        class="workbench-overview__primary col-span-8 grid min-w-0 gap-6 max-[1050px]:col-span-1"
+      >
         <AttentionQueue
           :items="overview.attentionItems"
           :attention-count="overview.activitySummary.attentionCount"
@@ -125,87 +149,7 @@ const handleOpenConfig = async (): Promise<void> => {
 
 <style scoped>
 .workbench-overview {
-  display: grid;
-  gap: 24px;
-  width: min(100%, 1600px);
-  padding: 24px;
-  margin: 0 auto;
   animation: overview-reveal 360ms var(--dm-motion-easing) both;
-}
-
-.workbench-overview__header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.workbench-overview__header h1 {
-  margin: 0;
-  color: var(--dm-color-zinc-900);
-  font-size: 20px;
-  font-weight: 680;
-  letter-spacing: -0.025em;
-}
-
-.workbench-overview__header p {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 5px 0 0;
-  color: var(--dm-color-zinc-500);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.workbench-overview__header p :deep(.app-icon) {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  color: var(--dm-color-accent);
-}
-
-.workbench-overview__header p strong {
-  color: var(--dm-color-zinc-900);
-  font-weight: 650;
-}
-
-.workbench-overview__header p mark {
-  padding: 1px 5px;
-  color: #b45309;
-  border-radius: 4px;
-  background: #fffbeb;
-  font-weight: 650;
-}
-
-.workbench-overview__actions {
-  display: flex;
-  gap: 8px;
-  flex: 0 0 auto;
-}
-
-.workbench-overview__actions :deep(.dm-button) {
-  min-height: 32px;
-  padding: 7px 12px;
-  font-size: 12px;
-}
-
-.workbench-overview__actions :deep(.app-icon) {
-  width: 14px;
-  height: 14px;
-}
-
-.workbench-overview__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2.06fr) minmax(300px, 1fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.workbench-overview__primary {
-  display: grid;
-  gap: 24px;
-  min-width: 0;
 }
 
 .workbench-overview__loading {
@@ -263,7 +207,6 @@ const handleOpenConfig = async (): Promise<void> => {
 }
 
 @media (max-width: 1050px) {
-  .workbench-overview__grid,
   .workbench-overview__loading {
     grid-template-columns: 1fr;
   }
@@ -272,24 +215,6 @@ const handleOpenConfig = async (): Promise<void> => {
   .workbench-overview__loading i:nth-child(3) {
     grid-column: 1;
     grid-row: auto;
-  }
-}
-
-@media (max-width: 700px) {
-  .workbench-overview {
-    gap: 18px;
-    padding: 18px 14px;
-  }
-
-  .workbench-overview__header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .workbench-overview__header p {
-    align-items: flex-start;
-    font-size: 12px;
   }
 }
 

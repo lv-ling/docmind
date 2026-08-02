@@ -28,35 +28,53 @@ const handlePasswordInput = (event: Event): void => {
 </script>
 
 <template>
-  <section class="login-panel" aria-labelledby="login-title">
-    <div class="login-panel__content">
-      <div class="login-panel__workspace login-reveal">
-        <Building2 :size="12" :stroke-width="2" aria-hidden="true" />
+  <section class="flex min-w-0 items-center justify-center bg-paper" aria-labelledby="login-title">
+    <div class="w-full max-w-85">
+      <div
+        class="mb-8 inline-flex translate-y-2 items-center gap-1.5 rounded-compact border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-[0.6875rem] font-medium text-zinc-500 opacity-0 shadow-subtle animate-dm-reveal motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+      >
+        <Building2 class="text-zinc-400" :size="12" :stroke-width="2" aria-hidden="true" />
         <span>DocMind 企业版</span>
       </div>
 
-      <header class="login-panel__header login-reveal login-delay-100">
-        <h2 id="login-title">进入 DocMind 工作空间</h2>
-        <p>使用企业账号进行身份验证</p>
+      <header
+        class="mb-8 translate-y-2 opacity-0 animate-dm-reveal animate-delay-100 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+      >
+        <h2
+          id="login-title"
+          class="mt-0 mr-0 mb-2 ml-0 text-[1.5rem] leading-[1.33] font-semibold tracking-[-0.025em] text-zinc-900"
+        >
+          进入 DocMind 工作空间
+        </h2>
+        <p class="m-0 text-[0.8125rem] text-zinc-500">使用企业账号进行身份验证</p>
       </header>
 
-      <form class="login-form login-reveal login-delay-150" @submit.prevent="emit('submit')">
+      <form
+        class="grid translate-y-2 gap-5 opacity-0 animate-dm-reveal animate-delay-150 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+        @submit.prevent="emit('submit')"
+      >
         <div
           v-if="sessionExpired"
           id="login-session-message"
-          class="login-form__notice"
+          class="rounded-compact border border-danger-border bg-danger-soft px-3 py-2.5 text-[0.75rem] leading-[1.4] text-danger-strong"
           role="status"
         >
           会话已过期，请重新登录
         </div>
-        <div v-if="error" id="login-error" class="login-form__notice" role="alert">
+        <div
+          v-if="error"
+          id="login-error"
+          class="rounded-compact border border-danger-border bg-danger-soft px-3 py-2.5 text-[0.75rem] leading-[1.4] text-danger-strong"
+          role="alert"
+        >
           {{ error }}
         </div>
 
-        <label class="login-form__field" for="login-account">
-          <span>企业账号</span>
+        <label class="grid gap-1.5" for="login-account">
+          <span class="text-[0.75rem] font-medium text-zinc-700">企业账号</span>
           <input
             id="login-account"
+            class="min-h-10 w-full rounded-compact border border-zinc-200 bg-paper px-3.5 py-2.5 text-[0.8125rem] leading-5 text-zinc-900 shadow-subtle outline-none transition-[border-color,box-shadow] duration-control ease-dm placeholder:text-zinc-400 focus:border-brand-400 focus:shadow-control-focus motion-reduce:transition-none"
             :value="account"
             type="text"
             name="account"
@@ -68,11 +86,14 @@ const handlePasswordInput = (event: Event): void => {
           />
         </label>
 
-        <div class="login-form__field">
-          <label for="login-password">密码</label>
-          <div class="login-form__password-control">
+        <div class="grid gap-1.5">
+          <label class="text-[0.75rem] font-medium text-zinc-700" for="login-password">
+            密码
+          </label>
+          <div class="relative">
             <input
               id="login-password"
+              class="min-h-10 w-full rounded-compact border border-zinc-200 bg-paper py-2.5 pr-11 pl-3.5 text-[0.8125rem] leading-5 text-zinc-900 shadow-subtle outline-none transition-[border-color,box-shadow] duration-control ease-dm placeholder:text-zinc-400 focus:border-brand-400 focus:shadow-control-focus motion-reduce:transition-none"
               :value="password"
               :type="isPasswordVisible ? 'text' : 'password'"
               name="password"
@@ -83,7 +104,7 @@ const handlePasswordInput = (event: Event): void => {
               @input="handlePasswordInput"
             />
             <button
-              class="login-form__password-toggle"
+              class="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-xs border-0 bg-transparent p-0 text-zinc-400 transition-[color,background-color] duration-interaction ease-standard hover:bg-zinc-100 hover:text-zinc-700 focus-visible:text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-focus motion-reduce:transition-none"
               type="button"
               :aria-label="isPasswordVisible ? '隐藏密码' : '显示密码'"
               :aria-pressed="isPasswordVisible"
@@ -95,10 +116,19 @@ const handlePasswordInput = (event: Event): void => {
           </div>
         </div>
 
-        <div class="login-form__action">
-          <button type="submit" :disabled="isSubmitting" :aria-busy="isSubmitting">
+        <div class="pt-2">
+          <button
+            class="inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-compact border-0 bg-zinc-900 px-4 py-2.5 text-[0.8125rem] leading-5 font-medium text-white shadow-subtle transition-colors duration-interaction ease-standard enabled:hover:bg-zinc-800 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-focus disabled:cursor-wait motion-reduce:transition-none"
+            type="submit"
+            :disabled="isSubmitting"
+            :aria-busy="isSubmitting"
+          >
             <template v-if="isSubmitting">
-              <LoaderCircle class="login-form__spinner" :size="14" :stroke-width="2" />
+              <LoaderCircle
+                class="animate-dm-spin motion-reduce:animate-none"
+                :size="14"
+                :stroke-width="2"
+              />
               <span>验证中...</span>
             </template>
             <template v-else>
@@ -109,8 +139,10 @@ const handlePasswordInput = (event: Event): void => {
         </div>
       </form>
 
-      <p class="login-panel__security login-reveal login-delay-200">
-        <ShieldCheck :size="14" :stroke-width="2" aria-hidden="true" />
+      <p
+        class="mt-8 mr-0 mb-0 ml-0 flex translate-y-2 items-center justify-center gap-1.5 border-t border-zinc-100 pt-6 text-[0.6875rem] text-zinc-400 opacity-0 animate-dm-reveal animate-delay-200 motion-reduce:translate-y-0 motion-reduce:animate-none motion-reduce:opacity-100"
+      >
+        <ShieldCheck class="text-zinc-300" :size="14" :stroke-width="2" aria-hidden="true" />
         <span>安全连接 · 会话仅保留在当前浏览器标签页</span>
       </p>
     </div>

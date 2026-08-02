@@ -58,13 +58,33 @@ const schemaRoutes: RouteRecordRaw[] = [
 
 const extractionRoutes: RouteRecordRaw[] = [
   {
+    path: 'extraction/processing',
+    name: RouteName.ExtractionProcessing,
+    component: () => import('@/views/extraction/processing/index.vue'),
+    meta: {
+      title: 'AI 处理中心',
+      module: 'extraction',
+      menuKey: RouteName.ExtractionProcessing,
+    },
+  },
+  {
+    path: 'extraction/queue',
+    name: RouteName.ExtractionReviewQueue,
+    component: () => import('@/views/extraction/queue/index.vue'),
+    meta: {
+      title: '审核中心',
+      module: 'extraction',
+      menuKey: RouteName.ExtractionReviewQueue,
+    },
+  },
+  {
     path: 'extraction/create',
     name: RouteName.ExtractionCreate,
     component: () => import('@/views/extraction/create/index.vue'),
     meta: {
       title: '发起字段抽取',
       module: 'extraction',
-      menuKey: RouteName.ExtractionReview,
+      menuKey: RouteName.ExtractionProcessing,
       hidden: true,
       requiredQuery: ['sourceVersionId'],
       invalidQueryRedirect: RouteName.SourceList,
@@ -77,7 +97,7 @@ const extractionRoutes: RouteRecordRaw[] = [
     meta: {
       title: '抽取复核',
       module: 'extraction',
-      menuKey: RouteName.ExtractionReview,
+      menuKey: RouteName.ExtractionReviewQueue,
       hidden: true,
       requiredQuery: ['extractionId'],
       invalidQueryRedirect: RouteName.SourceList,

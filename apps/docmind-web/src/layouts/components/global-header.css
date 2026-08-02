@@ -5,9 +5,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 22px;
+  min-height: var(--dm-layout-header-height);
+  padding: 0 24px;
   border-bottom: 1px solid var(--dm-color-border);
-  background: rgb(255 255 255 / 94%);
+  background: rgb(255 255 255 / 90%);
   backdrop-filter: blur(14px);
 }
 
@@ -108,8 +109,8 @@
 }
 
 .notification-trigger :deep(.app-icon) {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 
 .notification-trigger::after {
@@ -149,11 +150,8 @@
 }
 
 .workspace-create-workflow {
-  min-height: 30px;
-  padding: 7px 12px;
   border-color: var(--dm-color-zinc-900);
   background: var(--dm-color-zinc-900);
-  font-size: 12px;
 }
 
 .workspace-create-workflow:hover:not(:disabled) {

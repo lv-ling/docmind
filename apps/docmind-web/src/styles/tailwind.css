@@ -1,0 +1,165 @@
+@layer theme, base, components, utilities;
+
+/* Preflight is intentionally omitted while legacy pages are migrated incrementally. */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' source('../');
+
+/*
+ * Tailwind is an implementation API only. Every design value below resolves to
+ * the authoritative DocMind tokens declared in theme.css.
+ */
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: var(--dm-color-paper);
+  --color-black: var(--dm-color-zinc-950);
+
+  --color-zinc-50: var(--dm-color-zinc-50);
+  --color-zinc-100: var(--dm-color-zinc-100);
+  --color-zinc-200: var(--dm-color-zinc-200);
+  --color-zinc-300: var(--dm-color-zinc-300);
+  --color-zinc-400: var(--dm-color-zinc-400);
+  --color-zinc-500: var(--dm-color-zinc-500);
+  --color-zinc-600: var(--dm-color-zinc-600);
+  --color-zinc-700: var(--dm-color-zinc-700);
+  --color-zinc-800: var(--dm-color-zinc-800);
+  --color-zinc-900: var(--dm-color-zinc-900);
+  --color-zinc-950: var(--dm-color-zinc-950);
+
+  --color-brand-50: var(--dm-color-brand-50);
+  --color-brand-100: var(--dm-color-brand-100);
+  --color-brand-200: var(--dm-color-brand-200);
+  --color-brand-300: var(--dm-color-brand-300);
+  --color-brand-400: var(--dm-color-brand-400);
+  --color-brand-500: var(--dm-color-brand-500);
+  --color-brand-600: var(--dm-color-brand-600);
+  --color-brand-700: var(--dm-color-brand-700);
+  --color-brand-800: var(--dm-color-brand-800);
+  --color-brand-900: var(--dm-color-brand-900);
+
+  --color-canvas: var(--dm-color-canvas);
+  --color-paper: var(--dm-color-paper);
+  --color-paper-muted: var(--dm-color-paper-muted);
+  --color-ink: var(--dm-color-ink);
+  --color-ink-muted: var(--dm-color-ink-muted);
+  --color-border: var(--dm-color-border);
+  --color-border-strong: var(--dm-color-border-strong);
+  --color-border-subtle: var(--dm-color-border-subtle);
+  --color-brand: var(--dm-color-brand);
+  --color-brand-strong: var(--dm-color-brand-strong);
+  --color-brand-soft: var(--dm-color-brand-soft);
+  --color-brand-muted: var(--dm-color-brand-muted);
+  --color-brand-focus: var(--dm-color-brand-focus);
+  --color-brand-ring: var(--dm-color-brand-ring);
+  --color-accent: var(--dm-color-accent);
+  --color-focus: var(--dm-color-focus);
+  --color-success: var(--dm-color-success);
+  --color-warning: var(--dm-color-warning);
+  --color-danger: var(--dm-color-danger);
+  --color-danger-strong: var(--dm-color-danger-strong);
+  --color-danger-border: var(--dm-color-danger-border);
+  --color-danger-soft: var(--dm-color-danger-soft);
+  --color-diff-insert: var(--dm-color-diff-insert);
+  --color-diff-delete: var(--dm-color-diff-delete);
+  --color-control-border: var(--dm-color-control-border);
+  --color-status-border: var(--dm-color-status-border);
+  --color-status-surface: var(--dm-color-status-surface);
+
+  --spacing: var(--dm-space-1);
+  --spacing-sidebar: var(--dm-layout-sidebar-width);
+  --spacing-header: var(--dm-layout-header-height);
+  --container-content: var(--dm-layout-content-max);
+
+  --radius-*: initial;
+  --radius-xs: var(--dm-radius-xsmall);
+  --radius-sm: var(--dm-radius-small);
+  --radius-compact: var(--dm-radius-compact);
+  --radius-md: var(--dm-radius-medium);
+  --radius-lg: var(--dm-radius-large);
+  --radius-round: var(--dm-radius-round);
+  --radius-control: var(--dm-radius-small);
+  --radius-card: var(--dm-radius-medium);
+  --radius-surface: var(--dm-radius-large);
+
+  --shadow-*: initial;
+  --shadow-subtle: var(--dm-shadow-subtle);
+  --shadow-card: var(--dm-shadow-card);
+  --shadow-float: var(--dm-shadow-float);
+  --shadow-primary: var(--dm-shadow-primary);
+  --shadow-brand-glow: var(--dm-shadow-brand-glow);
+  --shadow-control-focus: var(--dm-shadow-control-focus);
+
+  --font-ui: var(--dm-font-ui);
+  --font-document: var(--dm-font-document);
+  --font-mono: var(--dm-font-mono);
+
+  --default-transition-duration: var(--dm-motion-fast);
+  --default-transition-timing-function: var(--dm-motion-easing);
+  --ease-dm: var(--dm-motion-easing);
+  --ease-standard: var(--dm-motion-easing-standard);
+
+  --animate-dm-page-fade: dm-page-fade var(--dm-motion-reveal) var(--dm-motion-easing) both;
+  --animate-dm-reveal: dm-reveal var(--dm-motion-enter) var(--dm-motion-easing) forwards;
+  --animate-dm-ping: dm-ping var(--dm-motion-cycle) var(--dm-motion-easing-out) infinite;
+  --animate-dm-spin: dm-spin var(--dm-motion-cycle) var(--dm-motion-easing-linear) infinite;
+}
+
+@utility duration-interaction {
+  transition-duration: var(--dm-motion-interaction);
+}
+
+@utility duration-control {
+  transition-duration: var(--dm-motion-control);
+}
+
+@utility duration-page {
+  transition-duration: var(--dm-motion-page);
+}
+
+@utility duration-exit {
+  transition-duration: var(--dm-motion-exit);
+}
+
+@utility animate-delay-100 {
+  animation-delay: var(--dm-motion-delay-100);
+}
+
+@utility animate-delay-150 {
+  animation-delay: var(--dm-motion-delay-150);
+}
+
+@utility animate-delay-200 {
+  animation-delay: var(--dm-motion-delay-200);
+}
+
+@utility animate-delay-300 {
+  animation-delay: var(--dm-motion-delay-300);
+}
+
+@keyframes dm-page-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dm-reveal {
+  to {
+    opacity: 1;
+    translate: 0;
+  }
+}
+
+@keyframes dm-ping {
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes dm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
