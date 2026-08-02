@@ -1,0 +1,51 @@
+.login-form-panel {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  min-height: 100vh;
+  padding: clamp(2rem, 7vw, 7rem);
+  background: var(--dm-color-paper);
+}
+
+.login-form {
+  display: grid;
+  gap: 1.35rem;
+  width: min(100%, 29rem);
+  margin-inline: auto;
+}
+
+.login-form h2 {
+  margin-bottom: 0;
+  font: 600 clamp(2rem, 4vw, 3.2rem)/1.1 var(--dm-font-document);
+  letter-spacing: -0.035em;
+}
+
+.login-intro {
+  color: var(--dm-color-ink-muted);
+  line-height: 1.65;
+}
+
+.login-form-panel > footer {
+  width: min(100%, 29rem);
+  margin: 2rem auto 0;
+  color: var(--dm-color-ink-muted);
+  font: 0.68rem/1.4 var(--dm-font-mono);
+  letter-spacing: 0.08em;
+}
+
+.login-form-panel > footer span {
+  color: var(--dm-color-accent);
+}
+
+@media (max-width: 60rem) {
+  .login-form-panel {
+    min-height: auto;
+    padding-block: 5rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .login-form-panel {
+    padding: 3rem 1.5rem;
+  }
+}

@@ -2,9 +2,9 @@
 import { onMounted, onUnmounted } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 
-import { RouteName } from './router/constants.js';
-import { SESSION_EXPIRED_EVENT, sessionExpiredLocation } from './session.js';
-import { useWorkspaceStore } from './stores/workspace.js';
+import { RouteName } from '@/router/constants.js';
+import { SESSION_EXPIRED_EVENT, sessionExpiredLocation } from '@/session.js';
+import { useWorkspaceStore } from '@/stores/workspace.js';
 
 const route = useRoute();
 const router = useRouter();

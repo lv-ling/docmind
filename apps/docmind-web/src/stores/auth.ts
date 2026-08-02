@@ -2,16 +2,16 @@ import type { UserSummary } from '@/contracts';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
-import { configureApiClient } from '../api/client.js';
-import { getCurrentUser, login as loginRequest } from '../api/identity.js';
-import { SESSION_EXPIRED_EVENT } from '../session.js';
+import { configureApiClient } from '@/api/client.js';
+import { getCurrentUser, login as loginRequest } from '@/api/identity.js';
+import { SESSION_EXPIRED_EVENT } from '@/session.js';
 
 const TOKEN_KEY = 'docmind.access-token';
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(sessionStorage.getItem(TOKEN_KEY));
   const user = ref<UserSummary | null>(null);
-  const initialized = ref(false);
+  const isInitialized = ref(false);
   const isAuthenticated = computed(() => accessToken.value !== null);
 
   const clear = (notifyExpired = false): void => {
@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const initialize = async (): Promise<void> => {
-    if (initialized.value) return;
+    if (isInitialized.value) return;
     if (accessToken.value !== null) {
       try {
         user.value = await getCurrentUser();
@@ -42,10 +42,10 @@ export const useAuthStore = defineStore('auth', () => {
         clear();
       }
     }
-    initialized.value = true;
+    isInitialized.value = true;
   };
 
   const logout = (): void => clear();
 
-  return { accessToken, user, initialized, isAuthenticated, login, logout, initialize };
+  return { accessToken, user, isInitialized, isAuthenticated, login, logout, initialize };
 });

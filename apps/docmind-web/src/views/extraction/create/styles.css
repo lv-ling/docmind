@@ -1,0 +1,126 @@
+.extraction-order {
+  padding: clamp(1rem, 2vw, 1.75rem);
+  border: 1px solid var(--dm-color-border);
+  background: var(--dm-color-paper);
+}
+
+.extraction-order label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--dm-color-ink-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.extraction-order select {
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--dm-color-border-strong);
+  border-radius: 0;
+  color: var(--dm-color-ink);
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+/* Extraction create */
+.extraction-create-page {
+  max-width: 72rem;
+}
+
+.extraction-order {
+  position: relative;
+  display: grid;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: var(--dm-shadow-float);
+}
+
+.order-number {
+  position: absolute;
+  top: -1rem;
+  right: 1rem;
+  color: var(--dm-color-paper-muted);
+  font: 10rem/1 var(--dm-font-document);
+  pointer-events: none;
+}
+
+.extraction-order > section {
+  position: relative;
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--dm-color-border);
+}
+
+.extraction-order h2 {
+  margin: 0;
+  font-family: var(--dm-font-document);
+}
+
+.extraction-order code {
+  color: var(--dm-color-brand);
+  overflow-wrap: anywhere;
+}
+
+.extraction-order select {
+  min-height: 3rem;
+  padding: 0.6rem;
+  font-weight: 650;
+}
+
+.extraction-order small {
+  color: var(--dm-color-ink-muted);
+  line-height: 1.5;
+}
+
+.order-checks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--dm-color-border);
+}
+
+.order-checks span {
+  padding: 1rem;
+  color: var(--dm-color-success);
+  background: var(--dm-color-paper-muted);
+  font-size: 0.75rem;
+}
+
+.extraction-order > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.2rem 2rem;
+}
+
+@media (max-width: 40rem) {
+  .order-checks {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .extraction-order > section {
+    padding: 1.2rem;
+  }
+
+  .extraction-order > footer {
+    padding: 1rem;
+  }
+}
+
+.extraction-order {
+  border-color: rgb(213 225 232 / 95%);
+  border-radius: 1.05rem;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 0.65rem 1.75rem rgb(25 61 88 / 6%);
+}
+
+@media (max-width: 48rem) {
+  .extraction-order {
+    padding: 1.1rem;
+    border-radius: 0.85rem;
+  }
+}

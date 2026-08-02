@@ -6,13 +6,13 @@ export const systemRoutes: RouteRecordRaw[] = [
   {
     path: RoutePath.Login,
     name: RouteName.Login,
-    component: () => import('../../views/LoginView.vue'),
+    component: () => import('@/views/system/login/index.vue'),
     meta: { title: '登录', module: 'system' },
   },
   {
     path: RoutePath.NotFound,
     name: RouteName.NotFound,
-    component: () => import('../../views/NotFoundView.vue'),
+    component: () => import('@/views/system/not-found/index.vue'),
     meta: { title: '页面不存在', module: 'system' },
   },
 ];

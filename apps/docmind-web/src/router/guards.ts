@@ -1,7 +1,7 @@
 import type { NavigationGuard, Router } from 'vue-router';
 
-import { useAuthStore } from '../stores/auth.js';
-import { useWorkspaceStore } from '../stores/workspace.js';
+import { useAuthStore } from '@/stores/auth.js';
+import { useWorkspaceStore } from '@/stores/workspace.js';
 import { RouteName } from './constants.js';
 import { getQueryString } from './query.js';
 import { ROUTE_WHITE_LIST } from './whitelist.js';

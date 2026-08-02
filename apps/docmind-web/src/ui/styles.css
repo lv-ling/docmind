@@ -38,6 +38,10 @@
   --dm-radius-large: 12px;
   --dm-shadow-card: 0 1px 2px rgb(24 24 27 / 5%);
   --dm-shadow-float: 0 12px 32px rgb(24 24 27 / 10%);
+  --dm-shadow-primary: none;
+  --dm-color-control-border: var(--dm-color-border);
+  --dm-color-status-border: var(--dm-color-border);
+  --dm-color-status-surface: var(--dm-color-paper-muted);
   --dm-motion-fast: 140ms;
   --dm-motion-normal: 220ms;
   --dm-motion-easing: cubic-bezier(0.16, 1, 0.3, 1);
@@ -98,6 +102,7 @@
   color: #fff;
   background: var(--dm-color-brand);
   border-color: var(--dm-color-brand);
+  box-shadow: var(--dm-shadow-primary);
 }
 
 .dm-button--primary:hover:not(:disabled) {
@@ -107,7 +112,7 @@
 .dm-button--secondary {
   color: var(--dm-color-ink);
   background: var(--dm-color-paper);
-  border-color: var(--dm-color-border);
+  border-color: var(--dm-color-control-border);
 }
 
 .dm-button--secondary:hover:not(:disabled) {
@@ -205,9 +210,9 @@
   gap: 0.35rem;
   min-height: 1.45rem;
   padding: 0.2rem 0.45rem;
-  border: 1px solid var(--dm-color-border);
+  border: 1px solid var(--dm-color-status-border);
   border-radius: var(--dm-radius-small);
-  background: var(--dm-color-paper-muted);
+  background: var(--dm-color-status-surface);
   color: var(--dm-color-ink-muted);
   font-size: 0.625rem;
   font-weight: 650;

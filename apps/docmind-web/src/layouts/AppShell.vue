@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { WorkspaceId } from '@/contracts';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 
 import { RouteName } from '@/router/constants.js';
@@ -17,6 +17,7 @@ const router = useRouter();
 const isMobileNavigationOpen = ref(false);
 const isNotificationPanelOpen = ref(false);
 const searchQuery = ref('');
+const isImmersiveLayout = computed(() => route.meta.layout === 'immersive');
 
 const handleWorkspaceChange = async (workspaceId: WorkspaceId): Promise<void> => {
   workspace.select(workspaceId);
@@ -54,8 +55,9 @@ watch(
 </script>
 
 <template>
-  <div class="workspace-shell">
+  <div class="workspace-shell" :class="{ 'workspace-shell--immersive': isImmersiveLayout }">
     <WorkspaceSidebar
+      v-if="!isImmersiveLayout"
       :workspaces="workspace.workspaces"
       :selected-workspace-id="workspace.selectedId"
       :active-menu-key="typeof route.meta.menuKey === 'string' ? route.meta.menuKey : null"
@@ -69,7 +71,7 @@ watch(
     />
 
     <div
-      v-if="isMobileNavigationOpen"
+      v-if="!isImmersiveLayout && isMobileNavigationOpen"
       class="workspace-sidebar-backdrop"
       aria-hidden="true"
       @click="isMobileNavigationOpen = false"
@@ -78,6 +80,7 @@ watch(
     <section class="workspace-content">
       <GlobalHeader
         v-model="searchQuery"
+        :has-navigation="!isImmersiveLayout"
         :is-mobile-navigation-open="isMobileNavigationOpen"
         :is-notification-panel-open="isNotificationPanelOpen"
         @submit-search="handleGlobalSearch"
@@ -109,6 +112,10 @@ watch(
   min-height: 100dvh;
   color: var(--dm-color-ink);
   background: var(--dm-color-paper);
+}
+
+.workspace-shell--immersive {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .workspace-content {

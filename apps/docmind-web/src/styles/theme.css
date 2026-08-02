@@ -1,0 +1,23 @@
+:root {
+  --dm-color-canvas: #edf2f4;
+  --dm-color-paper: #fff;
+  --dm-color-paper-muted: #f5f8f9;
+  --dm-color-ink: #18263a;
+  --dm-color-ink-muted: #627286;
+  --dm-color-border: #d9e2e8;
+  --dm-color-border-strong: #aebdca;
+  --dm-color-brand: #164a72;
+  --dm-color-brand-strong: #0d3455;
+  --dm-color-accent: #e96f3d;
+  --dm-color-focus: #0f83b8;
+  --dm-color-success: #208365;
+  --dm-color-warning: #a76b11;
+  --dm-color-danger: #bd4d4a;
+  --dm-color-control-border: #b7cbd5;
+  --dm-color-status-border: transparent;
+  --dm-color-status-surface: #eef4f6;
+  --dm-radius-small: 0.5rem;
+  --dm-radius-medium: 1rem;
+  --dm-shadow-float: 0 1.25rem 3.5rem rgb(25 53 76 / 12%);
+  --dm-shadow-primary: 0 0.35rem 0.9rem rgb(22 74 114 / 18%);
+}

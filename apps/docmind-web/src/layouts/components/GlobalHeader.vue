@@ -5,6 +5,7 @@ import AppIcon from '@/components/AppIcon.vue';
 
 defineProps<{
   modelValue: string;
+  hasNavigation: boolean;
   isMobileNavigationOpen: boolean;
   isNotificationPanelOpen: boolean;
 }>();
@@ -25,6 +26,7 @@ const handleSearchInput = (event: Event): void => {
 <template>
   <header class="workspace-header">
     <button
+      v-if="hasNavigation"
       type="button"
       class="mobile-navigation-trigger"
       aria-label="切换导航菜单"

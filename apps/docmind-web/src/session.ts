@@ -1,4 +1,4 @@
-import { RouteName, RoutePath } from './router/constants.js';
+import { RouteName, RoutePath } from '@/router/constants.js';
 
 export const SESSION_EXPIRED_EVENT = 'docmind:session-expired';
 
