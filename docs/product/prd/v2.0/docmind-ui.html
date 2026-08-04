@@ -1,0 +1,2556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocMind - 智能文档处理与协作平台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            apple: {
+              bg: '#F5F5F7',
+              blue: '#0071E3',
+              blueHover: '#0077ED',
+              card: '#FFFFFF',
+              border: '#E5E5EA',
+              subtext: '#86868B',
+              text: '#1D1D1F',
+              hoverBg: '#F2F2F7'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', '"Helvetica Neue"', 'Arial', 'sans-serif']
+          },
+          borderRadius: {
+            'apple-card': '16px',
+            'apple-btn': '10px'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background-color: #F5F5F7;
+      color: #1D1D1F;
+      -webkit-font-smoothing: antialiased;
+    }
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #C1C1C7;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #A1A1A8;
+    }
+    /* Page Animations */
+    .fade-in {
+      animation: fadeIn 0.22s cubic-bezier(0, 0, 0.2, 1) forwards;
+    }
+    .slide-up {
+      animation: slideUp 0.25s cubic-bezier(0, 0, 0.2, 1) forwards;
+    }
+    .slide-in-right {
+      animation: slideInRight 0.25s cubic-bezier(0, 0, 0.2, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    .diff-del { background-color: #FEE2E2; color: #991B1B; text-decoration: line-through; }
+    .diff-add { background-color: #DCFCE7; color: #166534; font-weight: 500; }
+    .diff-mod { background-color: #FEF3C7; color: #92400E; }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
+
+  <!-- Root Container -->
+  <div id="app" class="h-full w-full flex overflow-hidden"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
+
+  <!-- Modal Backdrop Container -->
+  <div id="modal-container" class="fixed inset-0 z-[8000] hidden items-center justify-center bg-black/30 backdrop-blur-sm fade-in p-4"></div>
+
+  <!-- Drawer Container -->
+  <div id="drawer-container" class="fixed inset-0 z-[7000] hidden bg-black/20 backdrop-blur-[2px] justify-end fade-in"></div>
+
+  <script>
+    // ==========================================
+    // 1. STATE MANAGEMENT & MOCK DATA ENGINE
+    // ==========================================
+
+    const ROLES = {
+      OWNER: { name: '工作区所有者', badge: 'bg-purple-100 text-purple-700 border-purple-200', desc: '拥有工作区全量管理权限' },
+      ADMIN: { name: '管理员', badge: 'bg-blue-100 text-blue-700 border-blue-200', desc: '管理成员、策略、模型与审计' },
+      EDITOR: { name: '编辑者', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', desc: '上传资产、设计模板、起草与编辑文档' },
+      REVIEWER: { name: '复核者', badge: 'bg-amber-100 text-amber-700 border-amber-200', desc: '复核抽取数据、审批业务文档' },
+      VIEWER: { name: '查看者', badge: 'bg-gray-100 text-gray-700 border-gray-200', desc: '仅具备只读与传阅确认权限' }
+    };
+
+    const USERS = [
+      { id: 'u1', name: '王若曦', role: 'OWNER', email: 'wangruoxi@docmind.cn', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' },
+      { id: 'u2', name: '赵子涵', role: 'EDITOR', email: 'zhaozihan@docmind.cn', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' },
+      { id: 'u3', name: '陈嘉宁', role: 'REVIEWER', email: 'chenjianing@docmind.cn', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
+      { id: 'u4', name: '周明远', role: 'ADMIN', email: 'zhoumingyuan@docmind.cn', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150' },
+      { id: 'u5', name: '林晓宇', role: 'VIEWER', email: 'linxiaoyu@docmind.cn', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150' }
+    ];
+
+    let state = {
+      currentUser: USERS[1], // 赵子涵 (EDITOR) by default
+      currentRole: 'EDITOR',
+      currentWorkspace: '华东大区法务与合规工作区',
+      isLoggedIn: true,
+      currentHash: '#workbench',
+      params: {},
+      toasts: [],
+      sidebarCollapsed: false,
+      
+      // Data models
+      assets: [
+        { id: 'ast-101', name: '采购框架协议_2026正式版.docx', format: 'DOCX', size: '2.4 MB', uploader: '赵子涵', time: '2026-08-01 10:20', sha256: 'a1b2c3d4e5f67890123456789abcdef0', status: 'ready', versions: [{ v: 'v1.0', time: '2026-08-01 10:20', size: '2.4 MB' }] },
+        { id: 'ast-102', name: '华东区供应商准入材料_远东科技.pdf', format: 'PDF', size: '5.8 MB', uploader: '陈嘉宁', time: '2026-08-02 14:15', sha256: 'f0e9d8c7b6a543210987654321fedcba', status: 'ready', versions: [{ v: 'v1.0', time: '2026-08-02 14:15', size: '5.8 MB' }] },
+        { id: 'ast-103', name: '软件服务合同V3_研发中心.docx', format: 'DOCX', size: '1.1 MB', uploader: '王若曦', time: '2026-08-03 09:30', sha256: '9876543210abcdef0123456789abcdef', status: 'ready', versions: [{ v: 'v1.0', time: '2026-08-03 09:30', size: '1.1 MB' }, { v: 'v1.1', time: '2026-08-04 11:00', size: '1.2 MB' }] },
+        { id: 'ast-104', name: '设备采购申请单_年度报备.docx', format: 'DOCX', size: '820 KB', uploader: '周明远', time: '2026-08-04 16:40', sha256: '1234567890abcdef1234567890abcdef', status: 'preview_failed', versions: [{ v: 'v1.0', time: '2026-08-04 16:40', size: '820 KB' }] }
+      ],
+
+      schemas: [
+        { id: 'sch-201', name: '通用合同关键字段抽取方案', version: 'v2.1', status: 'published', fieldsCount: 12, creator: '王若曦', updatedAt: '2026-07-28' },
+        { id: 'sch-202', name: '供应商准入资质审验方案', version: 'v1.0', status: 'published', fieldsCount: 8, creator: '陈嘉宁', updatedAt: '2026-08-01' },
+        { id: 'sch-203', name: '保密协议(NDA)审查提取模板', version: 'v0.9', status: 'draft', fieldsCount: 6, creator: '赵子涵', updatedAt: '2026-08-03' }
+      ],
+
+      extractionTasks: [
+        { id: 'ext-301', docName: '华东区供应商准入材料_远东科技.pdf', schemaName: '供应商准入资质审验方案', status: 'review_required', confidence: 94.2, stage: '等待复核', progress: 100, createdAt: '2026-08-04 09:12' },
+        { id: 'ext-302', docName: '采购框架协议_2026正式版.docx', schemaName: '通用合同关键字段抽取方案', status: 'approved', confidence: 98.6, stage: '已完成', progress: 100, createdAt: '2026-08-03 15:30' },
+        { id: 'ext-303', docName: '软件服务合同V3_研发中心.docx', schemaName: '通用合同关键字段抽取方案', status: 'extracting', confidence: 0, stage: '模型结构化抽取中', progress: 68, createdAt: '2026-08-04 22:10' }
+      ],
+
+      templates: [
+        { id: 'tpl-401', name: '法务标准采购框架合同模板', version: 'v3.0', type: 'fillable', status: 'published', fieldsBound: 10, updatedAt: '2026-07-30', creator: '赵子涵' },
+        { id: 'tpl-402', name: '通用保密协议(NDA)标准范本', version: 'v1.2', type: 'fillable', status: 'published', fieldsBound: 5, updatedAt: '2026-08-02', creator: '王若曦' },
+        { id: 'tpl-403', name: '行业合规参考条文集(2026)', version: 'v1.0', type: 'reference', status: 'published', fieldsBound: 0, updatedAt: '2026-06-15', creator: '周明远' },
+        { id: 'tpl-404', name: '设备采购补充条款拟定草稿', version: 'v0.1', type: 'fillable', status: 'draft', fieldsBound: 4, updatedAt: '2026-08-04', creator: '赵子涵' }
+      ],
+
+      bizDocs: [
+        { 
+          id: 'biz-501', 
+          name: '2026年度远东科技IT基础设施采购合同', 
+          tplName: '法务标准采购框架合同模板', 
+          tplVersion: 'v3.0',
+          mode: 'internal', 
+          status: 'editing_internal', 
+          editor: '赵子涵', 
+          currentAssignee: '赵子涵',
+          approvers: ['陈嘉宁', '周明远'],
+          updatedAt: '2026-08-04 20:15',
+          fields: {
+            '合同编号': 'DM-2026-CT-089',
+            '甲方名称': 'DocMind 科技有限公司',
+            '乙方名称': '远东信息技术有限公司',
+            '合同金额': '¥ 1,280,000.00',
+            '签订日期': '2026-08-05',
+            '联系电话': '138****9921', // Masked if no perm
+            '银行账户': '6222****8819'
+          }
+        },
+        { 
+          id: 'biz-502', 
+          name: '供应商保密协议_上海启航软件', 
+          tplName: '通用保密协议(NDA)标准范本', 
+          tplVersion: 'v1.2',
+          mode: 'external', 
+          status: 'editing_external', 
+          editor: '外部填写人', 
+          currentAssignee: '外部填写人 (链接有效)',
+          approvers: ['陈嘉宁'],
+          updatedAt: '2026-08-04 18:00',
+          fields: {
+            '甲方名称': 'DocMind 科技有限公司',
+            '乙方名称': '上海启航软件服务有限公司',
+            '保密期限': '3年'
+          }
+        },
+        { 
+          id: 'biz-503', 
+          name: '云端服务器租赁补充协议', 
+          tplName: '法务标准采购框架合同模板', 
+          tplVersion: 'v3.0',
+          mode: 'internal', 
+          status: 'awaiting_approval', 
+          editor: '赵子涵', 
+          currentAssignee: '陈嘉宁 (待一级审批)',
+          approvers: ['陈嘉宁', '周明远'],
+          updatedAt: '2026-08-04 14:30',
+          fields: {
+            '合同编号': 'DM-2026-CT-077',
+            '甲方名称': 'DocMind 科技有限公司',
+            '乙方名称': '阿里云计算有限公司',
+            '合同金额': '¥ 450,000.00',
+            '签订日期': '2026-08-04'
+          }
+        },
+        { 
+          id: 'biz-504', 
+          name: '办公设备维保合同_2026下半年', 
+          tplName: '法务标准采购框架合同模板', 
+          tplVersion: 'v3.0',
+          mode: 'internal', 
+          status: 'completed', 
+          editor: '赵子涵', 
+          currentAssignee: '已归档归档锁存',
+          approvers: ['陈嘉宁', '周明远'],
+          updatedAt: '2026-08-02 11:00',
+          fields: {
+            '合同编号': 'DM-2026-CT-012',
+            '甲方名称': 'DocMind 科技有限公司',
+            '乙方名称': '晨光办公设备有限公司',
+            '合同金额': '¥ 88,000.00'
+          }
+        }
+      ],
+
+      compareTasks: [
+        { id: 'cmp-601', title: '2026年度远东科技IT基础设施采购合同 对比 原始模板', docA: '法务标准采购框架合同模板 (v3.0)', docB: '2026年度远东科技IT基础设施采购合同 (业务文档)', mode: 'adjust', status: 'completed', diffCount: 4, createdAt: '2026-08-04 21:00' },
+        { id: 'cmp-602', title: '软件服务合同V3 与 上一版本V2 对比', docA: '软件服务合同V2.docx (上传原件)', docB: '软件服务合同V3_研发中心.docx (上传原件)', mode: 'readonly', status: 'completed', diffCount: 12, createdAt: '2026-08-03 16:20' }
+      ],
+
+      reviewTasks: [
+        { id: 'rev-701', docName: '2026年度远东科技IT基础设施采购合同', score: 88, issuesCount: 3, status: 'review_required', updatedAt: '2026-08-04 21:30' }
+      ],
+
+      securityPolicies: [
+        { id: 'sec-801', name: '中国大陆地区默认 PII 脱敏策略', version: 'v1.4', status: 'published', country: 'CN', piiTypes: ['电话', '身份证', '银行卡', '电子邮箱', '姓名'], creator: '周明远' }
+      ],
+
+      members: USERS,
+
+      auditLogs: [
+        { id: 'log-901', operator: '赵子涵', action: '提交业务文档审批', objectType: '业务文档', objectId: 'biz-503', result: '成功', time: '2026-08-04 14:30:12', ip: '192.168.1.102' },
+        { id: 'log-902', operator: '陈嘉宁', action: '修改结构化抽取字段', objectType: '抽取任务', objectId: 'ext-301', result: '成功', time: '2026-08-04 11:15:00', ip: '192.168.1.105' },
+        { id: 'log-903', operator: '周明远', action: '更新数据安全策略', objectType: '安全策略', objectId: 'sec-801', result: '成功', time: '2026-08-03 17:00:22', ip: '192.168.1.101' },
+        { id: 'log-904', operator: '王若曦', action: '发布模板新版本', objectType: '模板中心', objectId: 'tpl-401', result: '成功', time: '2026-07-30 09:00:00', ip: '192.168.1.100' }
+      ],
+
+      notifications: [
+        { id: 'ntf-1', title: '新的审批待办', content: '您收到《云端服务器租赁补充协议》的一级审批请示。', time: '10分钟前', read: false, targetHash: '#approval-view?id=biz-503' },
+        { id: 'ntf-2', title: '抽取复核提醒', content: '《华东区供应商准入材料_远东科技.pdf》抽取完成，需人工复核。', time: '2小时前', read: false, targetHash: '#extraction-review?id=ext-301' },
+        { id: 'ntf-3', title: '外部填写完成', content: '《供应商保密协议_上海启航软件》已由外部链接填写提交。', time: '4小时前', read: true, targetHash: '#bizdoc-detail?id=biz-502' }
+      ]
+    };
+
+    // ==========================================
+    // 2. ROUTER & CORE EVENT CONTROLLER
+    // ==========================================
+
+    function initRouter() {
+      window.addEventListener('hashchange', handleRoute);
+      if (!location.hash) {
+        location.hash = '#workbench';
+      } else {
+        handleRoute();
+      }
+    }
+
+    function handleRoute() {
+      const hashStr = location.hash || '#workbench';
+      const [path, queryStr] = hashStr.split('?');
+      state.currentHash = path;
+      state.params = parseQuery(queryStr);
+      renderApp();
+    }
+
+    function parseQuery(queryString) {
+      const params = {};
+      if (!queryString) return params;
+      const pairs = queryString.split('&');
+      for (const pair of pairs) {
+        const [key, val] = pair.split('=');
+        params[decodeURIComponent(key)] = decodeURIComponent(val || '');
+      }
+      return params;
+    }
+
+    function navigateTo(hash) {
+      location.hash = hash;
+    }
+
+    // Role switcher logic
+    function switchRole(roleKey) {
+      state.currentRole = roleKey;
+      state.currentUser = USERS.find(u => u.role === roleKey) || USERS[0];
+      showToast(`已切换演练角色为：${ROLES[roleKey].name}`, 'info');
+      renderApp();
+    }
+
+    // Toast Notification System
+    function showToast(message, type = 'success') {
+      const id = 'toast-' + Date.now();
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const colors = {
+        success: 'bg-emerald-800/90 text-white border-emerald-700',
+        error: 'bg-rose-800/90 text-white border-rose-700',
+        warning: 'bg-amber-800/90 text-white border-amber-700',
+        info: 'bg-slate-900/90 text-white border-slate-700'
+      };
+
+      const icons = {
+        success: 'check-circle-2',
+        error: 'alert-triangle',
+        warning: 'alert-circle',
+        info: 'info'
+      };
+
+      const toastEl = document.createElement('div');
+      toastEl.id = id;
+      toastEl.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl backdrop-blur-md border border-white/10 text-sm font-medium slide-up ${colors[type]}`;
+      toastEl.innerHTML = `
+        <i data-lucide="${icons[type]}" class="w-4 h-4 shrink-0"></i>
+        <span class="flex-1">${escapeHtml(message)}</span>
+        <button onclick="document.getElementById('${id}')?.remove()" class="opacity-60 hover:opacity-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+      `;
+
+      container.appendChild(toastEl);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('opacity-0', 'transition-opacity');
+          setTimeout(() => el.remove(), 300);
+        }
+      }, 3500);
+    }
+
+    // Helper Modal Renderers
+    function openModal(contentHtml) {
+      const container = document.getElementById('modal-container');
+      container.innerHTML = `<div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100 slide-up">${contentHtml}</div>`;
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      const container = document.getElementById('modal-container');
+      container.classList.add('hidden');
+      container.classList.remove('flex');
+      container.innerHTML = '';
+    }
+
+    function openDrawer(contentHtml) {
+      const container = document.getElementById('drawer-container');
+      container.innerHTML = `<div class="bg-white w-full max-w-md h-full shadow-2xl overflow-y-auto border-l border-gray-100 slide-in-right p-6">${contentHtml}</div>`;
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeDrawer() {
+      const container = document.getElementById('drawer-container');
+      container.classList.add('hidden');
+      container.classList.remove('flex');
+      container.innerHTML = '';
+    }
+
+    function confirmAction(title, message, onConfirm, isDanger = false) {
+      openModal(`
+        <div class="p-6">
+          <div class="w-10 h-10 rounded-full ${isDanger ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'} flex items-center justify-center mb-4">
+            <i data-lucide="${isDanger ? 'alert-triangle' : 'help-circle'}" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">${escapeHtml(title)}</h3>
+          <p class="text-sm text-slate-500 mt-2 leading-relaxed">${escapeHtml(message)}</p>
+          <div class="mt-6 flex justify-end gap-3">
+            <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+            <button id="confirm-btn" class="px-4 py-2 text-sm font-medium text-white ${isDanger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-apple-blue hover:bg-apple-blueHover'} rounded-lg shadow-sm">确认操作</button>
+          </div>
+        </div>
+      `);
+      document.getElementById('confirm-btn').onclick = () => {
+        closeModal();
+        onConfirm();
+      };
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function checkPermission(requiredRoleArr, actionName = '此操作') {
+      if (state.currentRole === 'OWNER' || state.currentRole === 'ADMIN') return true;
+      if (requiredRoleArr.includes(state.currentRole)) return true;
+      showToast(`权限受限：当前角色为 [${ROLES[state.currentRole].name}]，缺乏执行 ${actionName} 的功能权限。`, 'error');
+      return false;
+    }
+
+    // Mask sensitivity helper
+    function maskSensitive(val, fieldName) {
+      if (['OWNER', 'ADMIN', 'REVIEWER'].includes(state.currentRole)) return val;
+      if (!val) return val;
+      if (fieldName.includes('电话')) return val.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+      if (fieldName.includes('账户') || fieldName.includes('卡')) return '6222****' + val.slice(-4);
+      return '**** (脱敏保护)';
+    }
+
+    // ==========================================
+    // 3. MAIN UI LAYOUT RENDERER
+    // ==========================================
+
+    function renderApp() {
+      const app = document.getElementById('app');
+
+      // Standalone full views without global app frame (e.g. login, external fill)
+      if (state.currentHash === '#login') {
+        app.innerHTML = renderLoginPage();
+        lucide.createIcons();
+        return;
+      }
+      if (state.currentHash === '#external-fill') {
+        app.innerHTML = renderExternalFillPage();
+        lucide.createIcons();
+        return;
+      }
+
+      app.innerHTML = `
+        <!-- Left Sidebar Navigation -->
+        <aside class="${state.sidebarCollapsed ? 'w-20' : 'w-64'} h-full bg-white border-r border-apple-border flex flex-col shrink-0 transition-all duration-200 z-20">
+          <!-- Logo & Workspace -->
+          <div class="p-4 border-b border-apple-border flex items-center justify-between">
+            <a href="#workbench" class="flex items-center gap-3 overflow-hidden">
+              <div class="w-9 h-9 rounded-xl bg-apple-blue flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
+                <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+              </div>
+              ${!state.sidebarCollapsed ? `
+                <div class="flex flex-col">
+                  <span class="font-bold text-base tracking-tight text-slate-900">DocMind</span>
+                  <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Enterprise SaaS</span>
+                </div>
+              ` : ''}
+            </a>
+            <button onclick="state.sidebarCollapsed = !state.sidebarCollapsed; renderApp();" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100">
+              <i data-lucide="${state.sidebarCollapsed ? 'chevron-right' : 'chevron-left'}" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+            ${renderNavItem('#workbench', 'layout-dashboard', '工作台', false, 0)}
+            ${renderNavItem('#assets', 'folder-open', '文档资产', false, state.assets.length)}
+            
+            <!-- Group: Extraction -->
+            <div class="pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 ${state.sidebarCollapsed ? 'hidden' : ''}">智能抽取</div>
+            ${renderNavItem('#extraction', 'sparkles', '抽取任务', false, state.extractionTasks.filter(t => t.status !== 'approved').length)}
+            ${renderNavItem('#extraction-review-queue', 'list-checks', '复核队列', false, state.extractionTasks.filter(t => t.status === 'review_required').length)}
+            ${renderNavItem('#schemas', 'binary', '抽取方案', false, 0)}
+
+            <!-- Group: Template & Collaboration -->
+            <div class="pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 ${state.sidebarCollapsed ? 'hidden' : ''}">模板与协作</div>
+            ${renderNavItem('#templates', 'file-text', '模板中心', false, 0)}
+            ${renderNavItem('#bizdocs', 'file-signature', '业务文档', false, 0)}
+            ${renderNavItem('#tasks', 'clock', '我的待办', false, 2)}
+            ${renderNavItem('#external-mgmt', 'external-link', '外部提交', false, 1)}
+
+            <!-- Group: Analysis -->
+            <div class="pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 ${state.sidebarCollapsed ? 'hidden' : ''}">文档智能分析</div>
+            ${renderNavItem('#compare', 'git-compare', '文档对比', false, 0)}
+            ${renderNavItem('#review', 'bot', '智能审阅', false, 0)}
+
+            <!-- Group: Settings -->
+            <div class="pt-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 ${state.sidebarCollapsed ? 'hidden' : ''}">设置与审计</div>
+            ${renderNavItem('#security', 'shield-check', '数据安全策略', false, 0)}
+            ${renderNavItem('#members', 'users', '成员与权限', false, 0)}
+            ${renderNavItem('#model-config', 'cpu', '模型配置', false, 0)}
+            ${renderNavItem('#audit', 'history', '审计日志', false, 0)}
+          </nav>
+
+          <!-- Current User Footer -->
+          <div class="p-3 border-t border-apple-border bg-slate-50/50">
+            <div class="flex items-center gap-3">
+              <img src="${state.currentUser.avatar}" class="w-8 h-8 rounded-full border border-slate-200 shrink-0 object-cover" />
+              ${!state.sidebarCollapsed ? `
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-semibold text-slate-800 truncate">${state.currentUser.name}</div>
+                  <div class="text-[10px] text-slate-400 truncate">${ROLES[state.currentRole].name}</div>
+                </div>
+                <button onclick="navigateTo('#login')" title="退出登录" class="text-slate-400 hover:text-rose-600 p-1 rounded">
+                  <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right Main Stage -->
+        <div class="flex-1 h-full flex flex-col overflow-hidden bg-[#F5F5F7]">
+          <!-- Top Global Header -->
+          <header class="h-14 border-b border-apple-border apple-glass px-6 flex items-center justify-between shrink-0 z-10">
+            <!-- Breadcrumb / Search -->
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                <span>DocMind</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-slate-900 font-semibold">${getBreadcrumbTitle(state.currentHash)}</span>
+              </div>
+
+              <!-- Quick Search Input -->
+              <div class="relative hidden sm:block w-64 ml-4">
+                <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="text" placeholder="全局搜索文档、模板、抽取字段..." class="w-full bg-slate-100 border border-slate-200/80 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all">
+              </div>
+            </div>
+
+            <!-- Header Right Controls -->
+            <div class="flex items-center gap-3">
+              <!-- Workspace Selector -->
+              <div class="hidden md:flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-medium">
+                <i data-lucide="building-2" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span>${state.currentWorkspace}</span>
+              </div>
+
+              <!-- Demo Role Switcher Badge Dropdown -->
+              <div class="relative group">
+                <button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${ROLES[state.currentRole].badge} transition-all">
+                  <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                  <span>演示角色: ${ROLES[state.currentRole].name}</span>
+                  <i data-lucide="chevron-down" class="w-3 h-3 opacity-60"></i>
+                </button>
+                <div class="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-xl border border-gray-100 p-2 hidden group-hover:block z-50 slide-up">
+                  <div class="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">切换角色体验不同权限</div>
+                  ${Object.keys(ROLES).map(rKey => `
+                    <button onclick="switchRole('${rKey}')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-50 flex items-center justify-between ${state.currentRole === rKey ? 'font-bold text-apple-blue bg-blue-50/50' : 'text-slate-700'}">
+                      <span>${ROLES[rKey].name}</span>
+                      ${state.currentRole === rKey ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Notifications Bell -->
+              <button onclick="openNotificationsDrawer()" class="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+                <i data-lucide="bell" class="w-4 h-4"></i>
+                ${state.notifications.some(n => !n.read) ? '<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>' : ''}
+              </button>
+
+              <!-- Help Entry -->
+              <button onclick="showToast('DocMind SaaS 全流程体验帮助已就绪。所有按钮均可点击交互！', 'info')" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100">
+                <i data-lucide="help-circle" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </header>
+
+          <!-- Main Scrollable Body View -->
+          <main class="flex-1 overflow-y-auto custom-scrollbar p-6">
+            ${renderMainContent()}
+          </main>
+        </div>
+      `;
+
+      lucide.createIcons();
+      initViewCharts();
+    }
+
+    function renderNavItem(hash, icon, label, badgeCount = 0, count = 0) {
+      const isActive = state.currentHash === hash;
+      return `
+        <a href="${hash}" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+          isActive 
+            ? 'bg-apple-blue text-white font-semibold shadow-sm' 
+            : 'text-slate-600 hover:bg-apple-hoverBg hover:text-slate-900'
+        }">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
+            ${!state.sidebarCollapsed ? `<span class="truncate">${label}</span>` : ''}
+          </div>
+          ${!state.sidebarCollapsed && count > 0 ? `
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}">
+              ${count}
+            </span>
+          ` : ''}
+        </a>
+      `;
+    }
+
+    function getBreadcrumbTitle(hash) {
+      const titles = {
+        '#workbench': '工作台概览',
+        '#assets': '文档资产列表',
+        '#asset-detail': '不可变原件详情',
+        '#schemas': '抽取方案列表',
+        '#schema-editor': '抽取方案定义与编辑器',
+        '#extraction': '结构化抽取任务队列',
+        '#extraction-wizard': '创建抽取任务向导',
+        '#extraction-review': '三栏交互式人工复核工作台',
+        '#templates': '模板中心',
+        '#template-editor': '模板设计与字段绑定器',
+        '#bizdocs': '业务文档中心',
+        '#bizdoc-wizard': '新建业务文档向导',
+        '#bizdoc-edit': '业务文档正文编辑',
+        '#bizdoc-detail': '业务文档流转详情与时间线',
+        '#tasks': '我的待办事项',
+        '#approval-view': '流转文档只读审批',
+        '#external-mgmt': '外部提交管理',
+        '#compare': '文档差异对比任务',
+        '#compare-new': '新建文档对比',
+        '#compare-result': '权威 Diff 对比与调整结果',
+        '#review': '智能审阅中心',
+        '#review-detail': 'AI 智能审阅与文档助手',
+        '#security': '数据安全与 PII 脱敏策略',
+        '#members': '成员权限管理',
+        '#model-config': '大模型 API 配置',
+        '#audit': '审计日志'
+      };
+      return titles[hash] || '概览';
+    }
+
+    // Router page dispatch
+    function renderMainContent() {
+      switch (state.currentHash) {
+        case '#workbench': return renderWorkbenchPage();
+        case '#assets': return renderAssetsPage();
+        case '#asset-detail': return renderAssetDetailPage();
+        case '#schemas': return renderSchemasPage();
+        case '#schema-editor': return renderSchemaEditorPage();
+        case '#extraction': return renderExtractionPage();
+        case '#extraction-review-queue': return renderExtractionPage(true);
+        case '#extraction-wizard': return renderExtractionWizardPage();
+        case '#extraction-review': return renderExtractionReviewPage();
+        case '#templates': return renderTemplatesPage();
+        case '#template-editor': return renderTemplateEditorPage();
+        case '#bizdocs': return renderBizDocsPage();
+        case '#bizdoc-wizard': return renderBizDocWizardPage();
+        case '#bizdoc-edit': return renderBizDocEditPage();
+        case '#bizdoc-detail': return renderBizDocDetailPage();
+        case '#tasks': return renderTasksPage();
+        case '#approval-view': return renderApprovalViewPage();
+        case '#external-mgmt': return renderExternalMgmtPage();
+        case '#compare': return renderComparePage();
+        case '#compare-new': return renderCompareNewPage();
+        case '#compare-result': return renderCompareResultPage();
+        case '#review': return renderReviewPage();
+        case '#review-detail': return renderReviewDetailPage();
+        case '#security': return renderSecurityPage();
+        case '#members': return renderMembersPage();
+        case '#model-config': return renderModelConfigPage();
+        case '#audit': return renderAuditPage();
+        case '#no-permission': return renderNoPermissionPage();
+        default: return render404Page();
+      }
+    }
+
+    // Dynamic Chart initializer helper
+    function initViewCharts() {
+      setTimeout(() => {
+        if (state.currentHash === '#workbench') {
+          const ctx1 = document.getElementById('chart-trend')?.getContext('2d');
+          if (ctx1) {
+            new Chart(ctx1, {
+              type: 'line',
+              data: {
+                labels: ['07-29', '07-30', '07-31', '08-01', '08-02', '08-03', '08-04'],
+                datasets: [{
+                  label: '文档抽取数',
+                  data: [12, 19, 15, 25, 22, 30, 42],
+                  borderColor: '#0071E3',
+                  tension: 0.3,
+                  fill: false
+                }, {
+                  label: '业务文档流转',
+                  data: [8, 11, 14, 18, 16, 21, 28],
+                  borderColor: '#10B981',
+                  tension: 0.3,
+                  fill: false
+                }]
+              },
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+          }
+        }
+      }, 50);
+    }
+
+    // ==========================================
+    // 4. PAGES RENDERING IMPLEMENTATIONS
+    // ==========================================
+
+    // --- A. Login Page ---
+    function renderLoginPage() {
+      return `
+        <div class="h-screen w-screen flex items-center justify-center bg-[#F5F5F7] p-4">
+          <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-md w-full p-8 slide-up">
+            <div class="text-center mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-apple-blue flex items-center justify-center text-white font-bold text-2xl mx-auto shadow-lg mb-3">
+                <i data-lucide="brain-circuit" class="w-7 h-7"></i>
+              </div>
+              <h1 class="text-2xl font-bold text-slate-900 tracking-tight">DocMind 智能文档平台</h1>
+              <p class="text-xs text-slate-500 mt-1">围绕不可变原件的企业级 SaaS 文档处理与协作系统</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); navigateTo('#workbench'); showToast('登录成功，欢迎回来！');" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">工作邮箱</label>
+                <input type="email" value="zhaozihan@docmind.cn" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">登录密码</label>
+                <input type="password" value="••••••••••••" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue">
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <label class="flex items-center gap-2 text-slate-600">
+                  <input type="checkbox" checked class="rounded border-slate-300 text-apple-blue focus:ring-apple-blue">
+                  记住工作区会话
+                </label>
+                <a href="javascript:void(0)" onclick="showToast('请联系工作区管理员重置密码', 'info')" class="text-apple-blue hover:underline">忘记密码？</a>
+              </div>
+              <button type="submit" class="w-full bg-apple-blue hover:bg-apple-blueHover text-white py-2.5 rounded-xl font-medium shadow-md transition-all text-sm">
+                安全登录进入工作区
+              </button>
+            </form>
+
+            <div class="mt-6 border-t border-slate-100 pt-4">
+              <div class="text-[11px] font-bold text-slate-400 mb-2 uppercase tracking-wider text-center">快捷体验不同演示角色</div>
+              <div class="grid grid-cols-2 gap-2">
+                ${Object.keys(ROLES).map(k => `
+                  <button onclick="switchRole('${k}'); navigateTo('#workbench');" class="text-left p-2 rounded-lg border border-slate-200 hover:border-apple-blue hover:bg-blue-50/50 transition-all">
+                    <div class="text-xs font-bold text-slate-800">${ROLES[k].name}</div>
+                    <div class="text-[10px] text-slate-400 truncate">${ROLES[k].desc}</div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- B. Workbench Page ---
+    function renderWorkbenchPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <!-- Top Welcome Banner -->
+          <div class="bg-white rounded-apple-card p-6 shadow-sm border border-apple-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <h1 class="text-xl font-bold text-slate-900">早安，${state.currentUser.name}</h1>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${ROLES[state.currentRole].badge}">
+                  ${ROLES[state.currentRole].name}
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">当前工作区：<span class="font-medium text-slate-700">${state.currentWorkspace}</span> | 您有 <span class="text-rose-600 font-bold">2</span> 项待处理审批和复核事项。</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <a href="#assets" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-apple-btn text-xs font-medium transition-all flex items-center gap-1.5">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i> 上传原件
+              </a>
+              <a href="#bizdoc-wizard" class="px-3.5 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium transition-all flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i> 新建业务文档
+              </a>
+            </div>
+          </div>
+
+          <!-- Data Stats Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-apple-card shadow-sm border border-apple-border">
+              <div class="text-xs text-slate-500 font-medium">处理文档总数</div>
+              <div class="text-2xl font-bold text-slate-900 mt-2">128 <span class="text-xs font-normal text-slate-400">份</span></div>
+              <div class="text-[10px] text-emerald-600 font-medium mt-1 flex items-center gap-0.5"><i data-lucide="trending-up" class="w-3 h-3"></i> 较上月 +14%</div>
+            </div>
+            <div class="bg-white p-5 rounded-apple-card shadow-sm border border-apple-border">
+              <div class="text-xs text-slate-500 font-medium">抽取成功率</div>
+              <div class="text-2xl font-bold text-slate-900 mt-2">96.8%</div>
+              <div class="text-[10px] text-slate-400 mt-1">黄金集字段准确率 94.2%</div>
+            </div>
+            <div class="bg-white p-5 rounded-apple-card shadow-sm border border-apple-border">
+              <div class="text-xs text-slate-500 font-medium">待复核 / 待审批</div>
+              <div class="text-2xl font-bold text-amber-600 mt-2">3 <span class="text-xs font-normal text-slate-400">件</span></div>
+              <div class="text-[10px] text-amber-600 mt-1">需要您人工复核或确认</div>
+            </div>
+            <div class="bg-white p-5 rounded-apple-card shadow-sm border border-apple-border">
+              <div class="text-xs text-slate-500 font-medium">已发布模板</div>
+              <div class="text-2xl font-bold text-slate-900 mt-2">8 <span class="text-xs font-normal text-slate-400">套</span></div>
+              <div class="text-[10px] text-slate-400 mt-1">关联业务文档 42 份</div>
+            </div>
+          </div>
+
+          <!-- Trend Chart & My Tasks Split -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Chart Card -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-apple-card shadow-sm border border-apple-border flex flex-col">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">文档处理与协作流转趋势</h3>
+                  <p class="text-[11px] text-slate-400">过去 7 天的每日解析与业务审批量变化</p>
+                </div>
+                <select class="bg-slate-50 border border-slate-200 text-xs rounded-lg px-2.5 py-1 text-slate-600">
+                  <option>最近7天</option>
+                  <option>最近30天</option>
+                </select>
+              </div>
+              <div class="h-64 w-full relative">
+                <canvas id="chart-trend"></canvas>
+              </div>
+            </div>
+
+            <!-- Right Quick Shortcuts & Urgent Tasks -->
+            <div class="bg-white p-6 rounded-apple-card shadow-sm border border-apple-border flex flex-col space-y-4">
+              <h3 class="text-sm font-bold text-slate-900">快捷入口</h3>
+              <div class="grid grid-cols-2 gap-2">
+                <a href="#extraction-wizard" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center transition-all group">
+                  <i data-lucide="sparkles" class="w-5 h-5 text-apple-blue mb-1 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-xs font-semibold text-slate-800">发起抽取</span>
+                </a>
+                <a href="#compare-new" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center transition-all group">
+                  <i data-lucide="git-compare" class="w-5 h-5 text-indigo-600 mb-1 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-xs font-semibold text-slate-800">新建对比</span>
+                </a>
+                <a href="#review" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center transition-all group">
+                  <i data-lucide="bot" class="w-5 h-5 text-emerald-600 mb-1 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-xs font-semibold text-slate-800">智能审阅</span>
+                </a>
+                <a href="#schema-editor?id=sch-201" class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center transition-all group">
+                  <i data-lucide="binary" class="w-5 h-5 text-amber-600 mb-1 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-xs font-semibold text-slate-800">设计方案</span>
+                </a>
+              </div>
+
+              <div class="pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold text-slate-900">我的待办紧急提醒</span>
+                  <a href="#tasks" class="text-[11px] text-apple-blue font-medium hover:underline">查看全部</a>
+                </div>
+                <div class="space-y-2">
+                  <a href="#approval-view?id=biz-503" class="p-2.5 bg-amber-50/60 border border-amber-200/80 rounded-xl flex items-center justify-between hover:bg-amber-100/50 transition-colors">
+                    <div class="min-w-0 pr-2">
+                      <div class="text-xs font-semibold text-slate-900 truncate">《云端服务器租赁补充协议》待一级审批</div>
+                      <div class="text-[10px] text-slate-500">来自：赵子涵 | 今天 14:30</div>
+                    </div>
+                    <span class="px-2 py-1 bg-amber-600 text-white text-[10px] font-bold rounded-md shrink-0">去审批</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- My Pending Action Cards Table -->
+          <div class="bg-white rounded-apple-card shadow-sm border border-apple-border overflow-hidden">
+            <div class="p-5 border-b border-apple-border flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-900">近期活动与处理事项</h3>
+              <span class="text-xs text-slate-400">实操模拟数据已更新</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50/80 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    <th class="p-3.5 pl-6">业务名称 / 文档对象</th>
+                    <th class="p-3.5">类型</th>
+                    <th class="p-3.5">当前阶段 / 状态</th>
+                    <th class="p-3.5">发起人 / 更新人</th>
+                    <th class="p-3.5">更新时间</th>
+                    <th class="p-3.5 pr-6 text-right">主要操作</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-xs">
+                  ${state.extractionTasks.map(t => `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                      <td class="p-3.5 pl-6 font-medium text-slate-900 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <span class="truncate max-w-xs">${escapeHtml(t.docName)}</span>
+                      </td>
+                      <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px]">结构化抽取</span></td>
+                      <td class="p-3.5">
+                        ${t.status === 'review_required' 
+                          ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">等待复核</span>' 
+                          : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">已批准</span>'}
+                      </td>
+                      <td class="p-3.5 text-slate-600">陈嘉宁</td>
+                      <td class="p-3.5 text-slate-400">${t.createdAt}</td>
+                      <td class="p-3.5 pr-6 text-right">
+                        ${t.status === 'review_required' 
+                          ? `<a href="#extraction-review?id=${t.id}" class="px-3 py-1 bg-apple-blue hover:bg-apple-blueHover text-white rounded-md text-[11px] font-medium shadow-sm inline-block">进入复核</a>`
+                          : `<a href="#extraction-review?id=${t.id}" class="text-slate-500 hover:text-slate-800 text-[11px] font-medium">查看批准结果</a>`}
+                      </td>
+                    </tr>
+                  `).join('')}
+
+                  ${state.bizDocs.map(b => `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                      <td class="p-3.5 pl-6 font-medium text-slate-900 flex items-center gap-2">
+                        <i data-lucide="file-signature" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span class="truncate max-w-xs">${escapeHtml(b.name)}</span>
+                      </td>
+                      <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">业务文档</span></td>
+                      <td class="p-3.5">
+                        ${b.status === 'editing_internal' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">内部编辑中</span>' : ''}
+                        ${b.status === 'editing_external' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800">外部填写中</span>' : ''}
+                        ${b.status === 'awaiting_approval' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">审批中</span>' : ''}
+                        ${b.status === 'completed' ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700">已归档完成</span>' : ''}
+                      </td>
+                      <td class="p-3.5 text-slate-600">${b.editor}</td>
+                      <td class="p-3.5 text-slate-400">${b.updatedAt}</td>
+                      <td class="p-3.5 pr-6 text-right">
+                        ${b.status === 'editing_internal' ? `<a href="#bizdoc-edit?id=${b.id}" class="text-apple-blue hover:underline font-medium">去编辑</a>` : ''}
+                        ${b.status === 'awaiting_approval' ? `<a href="#approval-view?id=${b.id}" class="text-amber-600 hover:underline font-medium">去审批</a>` : ''}
+                        ${b.status === 'completed' ? `<a href="#bizdoc-detail?id=${b.id}" class="text-slate-500 hover:underline">查看详情</a>` : ''}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- C. Document Assets Page ---
+    function renderAssetsPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">文档资产 (不可变原件库)</h1>
+              <p class="text-xs text-slate-500">不可变原件永不覆盖，作为结构化抽取、模板转换和对比分析的权威数据源。</p>
+            </div>
+            <button onclick="openUploadModal()" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="upload" class="w-4 h-4"></i> 上传新原始文档
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="bg-white p-4 rounded-apple-card border border-apple-border shadow-sm flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+              <div class="relative flex-1">
+                <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="text" placeholder="按文件名/SHA-256摘要搜索..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-apple-blue">
+              </div>
+              <select class="bg-slate-50 border border-slate-200 text-xs rounded-lg px-3 py-1.5 text-slate-600">
+                <option value="">全部格式</option>
+                <option value="DOCX">DOCX</option>
+                <option value="PDF">PDF</option>
+              </select>
+            </div>
+            <div class="text-xs text-slate-400 font-medium">共 ${state.assets.length} 份原件文档</div>
+          </div>
+
+          <!-- Asset List Table -->
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">原始文档名称</th>
+                  <th class="p-3.5">格式/大小</th>
+                  <th class="p-3.5">SHA-256 校验摘要</th>
+                  <th class="p-3.5">当前状态</th>
+                  <th class="p-3.5">上传人</th>
+                  <th class="p-3.5">上传时间</th>
+                  <th class="p-3.5 pr-6 text-right">派生操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${state.assets.map(ast => `
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3.5 pl-6 font-medium text-slate-900">
+                      <a href="#asset-detail?id=${ast.id}" class="hover:text-apple-blue flex items-center gap-2">
+                        <i data-lucide="${ast.format === 'PDF' ? 'file-text' : 'file-spreadsheet'}" class="w-4 h-4 text-blue-600"></i>
+                        <span class="truncate max-w-xs font-semibold">${escapeHtml(ast.name)}</span>
+                      </a>
+                    </td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600">${ast.format}</span> <span class="text-slate-400">${ast.size}</span></td>
+                    <td class="p-3.5 font-mono text-[10px] text-slate-400">${ast.sha256.slice(0, 12)}...</td>
+                    <td class="p-3.5">
+                      ${ast.status === 'ready' 
+                        ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">已验证可派生</span>'
+                        : '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800">预览渲染异常</span>'}
+                    </td>
+                    <td class="p-3.5 text-slate-600">${ast.uploader}</td>
+                    <td class="p-3.5 text-slate-400">${ast.time}</td>
+                    <td class="p-3.5 pr-6 text-right space-x-2">
+                      <a href="#asset-detail?id=${ast.id}" class="text-apple-blue font-medium hover:underline">详情与派生</a>
+                      <button onclick="confirmAction('删除不可变原件', '删除原件将影响依赖它的历史对比与转换记录，是否确定进入回收站？', () => { showToast('原件已归档回收', 'warning'); })" class="text-rose-500 hover:underline">删除</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function openUploadModal() {
+      if (!checkPermission(['OWNER', 'ADMIN', 'EDITOR'], '上传文档资产')) return;
+
+      openModal(`
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="text-base font-bold text-slate-900">上传不可变原始文档</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          
+          <!-- Simulated Drag & Drop Area -->
+          <div id="upload-dropzone" onclick="simulateUploadProcess()" class="border-2 border-dashed border-slate-300 hover:border-apple-blue bg-slate-50/50 hover:bg-blue-50/30 rounded-2xl p-8 text-center cursor-pointer transition-all">
+            <i data-lucide="upload-cloud" class="w-10 h-10 text-apple-blue mx-auto mb-2"></i>
+            <p class="text-xs font-bold text-slate-800">点击选择或拖拽 Word / PDF 文件到此处</p>
+            <p class="text-[10px] text-slate-400 mt-1">支持 .doc, .docx, .pdf 格式 | 单文件上限 10MB | 自动计算 SHA-256 哈希</p>
+          </div>
+
+          <div id="upload-progress-box" class="hidden space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-700">
+              <span id="upload-filename">正在上传并计算哈希...</span>
+              <span id="upload-percent" class="text-apple-blue">0%</span>
+            </div>
+            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+              <div id="upload-bar" class="bg-apple-blue h-full w-0 transition-all duration-200"></div>
+            </div>
+            <div id="upload-status-text" class="text-[10px] text-slate-400">正在进行浏览器本地 SHA-256 计算与安全沙箱验证...</div>
+          </div>
+        </div>
+      `);
+    }
+
+    function simulateUploadProcess() {
+      const dropzone = document.getElementById('upload-dropzone');
+      const progressBox = document.getElementById('upload-progress-box');
+      const bar = document.getElementById('upload-bar');
+      const percent = document.getElementById('upload-percent');
+      const statusText = document.getElementById('upload-status-text');
+
+      dropzone.classList.add('hidden');
+      progressBox.classList.remove('hidden');
+
+      let p = 0;
+      const interval = setInterval(() => {
+        p += 20;
+        bar.style.width = p + '%';
+        percent.innerText = p + '%';
+
+        if (p === 40) {
+          statusText.innerText = 'SHA-256 校验码: 8f9b...a102 | 正在与对象存储同步...';
+        } else if (p === 80) {
+          statusText.innerText = '正在生成只读 PDF 矢量预览图谱...';
+        } else if (p >= 100) {
+          clearInterval(interval);
+          statusText.innerText = '验证完成！原件已成功入库。';
+          setTimeout(() => {
+            closeModal();
+            state.assets.unshift({
+              id: 'ast-' + Date.now(),
+              name: '2026年半年度财务合规报告_新增原件.pdf',
+              format: 'PDF',
+              size: '3.2 MB',
+              uploader: state.currentUser.name,
+              time: '刚刚',
+              sha256: '8f9b7c6d5e4f3a2b109876543210abcd',
+              status: 'ready',
+              versions: [{ v: 'v1.0', time: '刚刚', size: '3.2 MB' }]
+            });
+            showToast('原始文档已安全保存并完成验证！');
+            renderApp();
+          }, 600);
+        }
+      }, 250);
+    }
+
+    // --- C. Asset Detail Page ---
+    function renderAssetDetailPage() {
+      const ast = state.assets.find(a => a.id === state.params.id) || state.assets[0];
+
+      return `
+        <div class="space-y-6 fade-in">
+          <!-- Top Header -->
+          <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <a href="#assets" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+                <h1 class="text-base font-bold text-slate-900">${escapeHtml(ast.name)}</h1>
+                <span class="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600">${ast.format}</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1 font-mono">SHA-256: ${ast.sha256} | 上传人: ${ast.uploader}</p>
+            </div>
+
+            <!-- Derived Action Toolbar -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <a href="#extraction-wizard?docId=${ast.id}" class="px-3 py-1.5 bg-blue-50 text-apple-blue hover:bg-blue-100 rounded-lg text-xs font-semibold transition-all flex items-center gap-1">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 智能抽取
+              </a>
+              <button onclick="openConvertToTemplateModal('${ast.id}')" class="px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg text-xs font-semibold transition-all flex items-center gap-1">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 转换为模板
+              </button>
+              <a href="#compare-new?docA=${ast.id}" class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-semibold transition-all flex items-center gap-1">
+                <i data-lucide="git-compare" class="w-3.5 h-3.5"></i> 发起对比
+              </a>
+            </div>
+          </div>
+
+          <!-- Split Workspace: Left Mock Viewer, Right Metadata & Versions -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Mock PDF Viewer -->
+            <div class="lg:col-span-2 bg-slate-800 rounded-apple-card shadow-lg p-6 flex flex-col items-center justify-between min-h-[500px] relative">
+              <div class="w-full flex items-center justify-between text-slate-300 text-xs border-b border-slate-700 pb-3 mb-4">
+                <span>安全矢量预览器 (只读防护)</span>
+                <div class="flex items-center gap-3">
+                  <button onclick="showToast('正在放大预览...', 'info')" class="hover:text-white"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                  <span>1 / 4 页</span>
+                  <button onclick="showToast('已安全下载原始文件缓存', 'success')" class="hover:text-white"><i data-lucide="download" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+
+              <!-- Page Render Document Graphic -->
+              <div class="bg-white text-slate-900 w-full max-w-md rounded shadow-2xl p-8 space-y-4 text-xs font-serif leading-relaxed">
+                <div class="text-center font-bold text-base font-sans tracking-wide border-b pb-2">采购框架协议 (不可变原件预览)</div>
+                <p class="indent-4">甲方：DocMind 科技有限公司<br>乙方：远东信息技术有限公司</p>
+                <p>鉴于双方意图建立长期的软件及IT基础设施采购合作关系，特制定本框架协议。本文件为原始归档电子件，受加密算法保护不可直接篡改。</p>
+                <div class="p-3 bg-slate-50 border rounded font-mono text-[10px] text-slate-500">
+                  [条款 1.2] 合同总金额上限为人民币 1,280,000.00 元。<br>
+                  [条款 4.1] 质保期为交付验收合格之日起 36 个月。
+                </div>
+              </div>
+
+              <div class="text-[10px] text-slate-500 mt-4">安全防篡改水印已启用 | 客户端哈希实时匹配</div>
+            </div>
+
+            <!-- Right Version & Derived History -->
+            <div class="space-y-4">
+              <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm space-y-3">
+                <h3 class="text-xs font-bold text-slate-900">原件版本列表</h3>
+                <div class="space-y-2">
+                  ${ast.versions.map(v => `
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                      <div>
+                        <div class="text-xs font-bold text-slate-800">${v.v} (首版归档)</div>
+                        <div class="text-[10px] text-slate-400">${v.time} | ${v.size}</div>
+                      </div>
+                      <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-semibold rounded">当前版本</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm space-y-3">
+                <h3 class="text-xs font-bold text-slate-900">衍生历史关联</h3>
+                <div class="text-xs text-slate-500 space-y-2">
+                  <div class="flex items-center justify-between border-b pb-2">
+                    <span>关联抽取任务</span>
+                    <a href="#extraction" class="text-apple-blue font-medium">1 笔</a>
+                  </div>
+                  <div class="flex items-center justify-between border-b pb-2">
+                    <span>生成模板中心范本</span>
+                    <a href="#templates" class="text-apple-blue font-medium">1 笔</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openConvertToTemplateModal(astId) {
+      if (!checkPermission(['OWNER', 'ADMIN', 'EDITOR'], '转换模板')) return;
+
+      openModal(`
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="text-base font-bold text-slate-900">转换为模板中心范本</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+
+          <form onsubmit="event.preventDefault(); submitConvertToTemplate('${astId}');" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">新模板名称</label>
+              <input type="text" id="tpl-convert-name" value="法务标准采购框架合同模板_从原件派生" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-apple-blue">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">模板类型</label>
+              <select id="tpl-convert-type" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <option value="fillable">fillable (包含可填写绑定字段)</option>
+                <option value="reference">reference (仅作为静态条文参考)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">可选导入抽取方案作为基础字段定义</label>
+              <select id="tpl-convert-schema" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+                <option value="">不导入方案，手动设计字段</option>
+                <option value="sch-201" selected>通用合同关键字段抽取方案 (v2.1)</option>
+              </select>
+            </div>
+            <div class="pt-3 flex justify-end gap-2">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+              <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg shadow-sm">开始异步转换任务</button>
+            </div>
+          </form>
+        </div>
+      `);
+    }
+
+    function submitConvertToTemplate(astId) {
+      closeModal();
+      showToast('模板转换任务已提交，系统正在自动识别文本并创建草稿...');
+      setTimeout(() => {
+        state.templates.unshift({
+          id: 'tpl-' + Date.now(),
+          name: document.getElementById('tpl-convert-name')?.value || '派生新模板',
+          version: 'v0.1',
+          type: document.getElementById('tpl-convert-type')?.value || 'fillable',
+          status: 'draft',
+          fieldsBound: 6,
+          updatedAt: '刚刚',
+          creator: state.currentUser.name
+        });
+        navigateTo('#templates');
+        showToast('模板转换成功！现已生成编辑草稿。', 'success');
+      }, 1000);
+    }
+
+    // --- D. Extraction Schemas Page ---
+    function renderSchemasPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">结构化抽取方案库</h1>
+              <p class="text-xs text-slate-500">定义 JSON Schema、字段类型、正则约束与敏感脱敏掩码规则。</p>
+            </div>
+            <a href="#schema-editor" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="plus" class="w-4 h-4"></i> 新建抽取方案
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ${state.schemas.map(s => `
+              <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="px-2 py-0.5 bg-blue-50 text-apple-blue text-[10px] font-bold rounded">${s.version}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${s.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                      ${s.status === 'published' ? '已发布不可变' : '草稿状态'}
+                    </span>
+                  </div>
+                  <h3 class="text-sm font-bold text-slate-900">${escapeHtml(s.name)}</h3>
+                  <p class="text-xs text-slate-400 mt-1">包含 ${s.fieldsCount} 个结构化解析字段 | 创建人: ${s.creator}</p>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span class="text-[10px] text-slate-400">更新于 ${s.updatedAt}</span>
+                  <a href="#schema-editor?id=${s.id}" class="text-apple-blue hover:underline text-xs font-semibold">编辑 / 调整字段 Tree</a>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSchemaEditorPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <a href="#schemas" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <div>
+                <h1 class="text-base font-bold text-slate-900">通用合同关键字段抽取方案 (v2.1)</h1>
+                <p class="text-xs text-slate-400">JSON Schema 字段定义与配置编辑器</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="showToast('修改已保存为新草稿', 'success')" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium">保存草稿</button>
+              <button onclick="confirmAction('发布新方案版本', '发布后该版本方案将冻结不可变，并允许发起正式抽取任务。', () => showToast('方案 v2.2 已正式发布！'))" class="px-3.5 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-lg text-xs font-medium shadow-sm">发布此版本</button>
+            </div>
+          </div>
+
+          <!-- Split Schema Workbench -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Field Tree List -->
+            <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">字段结构 Tree</span>
+                <button onclick="showToast('已增加新的 string 类型字段节点', 'info')" class="text-xs text-apple-blue hover:underline font-semibold">+ 添加字段</button>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl font-medium text-slate-800 flex items-center justify-between">
+                  <span>contract_no (合同编号)</span>
+                  <span class="text-[10px] text-blue-600 bg-white px-1.5 py-0.5 rounded border">string</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 flex items-center justify-between">
+                  <span>party_a (甲方名称)</span>
+                  <span class="text-[10px] text-slate-500 bg-white px-1.5 py-0.5 rounded border">string</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 flex items-center justify-between">
+                  <span>amount (合同金额)</span>
+                  <span class="text-[10px] text-emerald-600 bg-white px-1.5 py-0.5 rounded border">number</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 flex items-center justify-between">
+                  <span>sign_date (签订日期)</span>
+                  <span class="text-[10px] text-purple-600 bg-white px-1.5 py-0.5 rounded border">date</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800 flex items-center justify-between">
+                  <span>bank_account (银行账户 - 敏感)</span>
+                  <span class="text-[10px] text-rose-600 bg-white px-1.5 py-0.5 rounded border">PII Mask</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle JSON Schema Code Preview -->
+            <div class="lg:col-span-2 bg-slate-900 text-slate-200 p-5 rounded-apple-card shadow-lg font-mono text-xs overflow-x-auto space-y-2">
+              <div class="text-slate-400 text-[10px] uppercase font-sans font-bold tracking-wider mb-2 border-b border-slate-800 pb-2">JSON Schema 实时生成的权威模型结构</div>
+              <pre class="text-emerald-400">
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ContractSchema",
+  "type": "object",
+  "required": ["contract_no", "party_a", "party_b", "amount"],
+  "properties": {
+    "contract_no": {
+      "type": "string",
+      "description": "合同唯一文本编号，例如 DM-2026-CT-089",
+      "pattern": "^DM-[0-9]{4}-[A-Z]{2}-[0-9]{3}$"
+    },
+    "party_a": { "type": "string", "description": "甲方采购主体法定全称" },
+    "amount": { "type": "number", "minimum": 0 },
+    "bank_account": { 
+      "type": "string", 
+      "sensitive_level": "HIGH", 
+      "mask_rule": "MASK_MIDDLE_8" 
+    }
+  }
+}
+              </pre>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- E. Intelligent Extraction Page & Review Workbench ---
+    function renderExtractionPage(isQueueOnly = false) {
+      const list = isQueueOnly ? state.extractionTasks.filter(t => t.status === 'review_required') : state.extractionTasks;
+
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">${isQueueOnly ? '人工复核队列' : '结构化抽取任务中心'}</h1>
+              <p class="text-xs text-slate-500">模型抽取与 PII 令牌化脱敏流水线，所有无证据数据必须经人工确认。</p>
+            </div>
+            <a href="#extraction-wizard" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="plus" class="w-4 h-4"></i> 创建抽取任务
+            </a>
+          </div>
+
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">源文件名称</th>
+                  <th class="p-3.5">使用抽取方案</th>
+                  <th class="p-3.5">整体置信度</th>
+                  <th class="p-3.5">任务流水线阶段</th>
+                  <th class="p-3.5">创建时间</th>
+                  <th class="p-3.5 pr-6 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${list.map(t => `
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3.5 pl-6 font-semibold text-slate-900">${escapeHtml(t.docName)}</td>
+                    <td class="p-3.5 text-slate-600">${escapeHtml(t.schemaName)}</td>
+                    <td class="p-3.5">
+                      ${t.confidence > 0 ? `<span class="font-bold ${t.confidence > 90 ? 'text-emerald-600' : 'text-amber-600'}">${t.confidence}%</span>` : '<span class="text-slate-400">计算中</span>'}
+                    </td>
+                    <td class="p-3.5">
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${t.status === 'review_required' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                        ${t.stage}
+                      </span>
+                    </td>
+                    <td class="p-3.5 text-slate-400">${t.createdAt}</td>
+                    <td class="p-3.5 pr-6 text-right">
+                      <a href="#extraction-review?id=${t.id}" class="px-3 py-1 ${t.status === 'review_required' ? 'bg-apple-blue text-white' : 'bg-slate-100 text-slate-700'} rounded-md text-[11px] font-medium shadow-sm">
+                        ${t.status === 'review_required' ? '开始复核' : '查看结果'}
+                      </a>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderExtractionWizardPage() {
+      return `
+        <div class="max-w-2xl mx-auto space-y-6 fade-in py-4">
+          <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-6">
+            <div class="border-b pb-4">
+              <h1 class="text-lg font-bold text-slate-900">创建结构化抽取任务向导</h1>
+              <p class="text-xs text-slate-400 mt-1">选择目标源文档、解析 Schema 与数据安全 PII 策略</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); submitExtractionWizard();" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">1. 选择不可变输入源文档</label>
+                <select id="ext-wiz-doc" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+                  ${state.assets.map(a => `<option value="${a.id}">${a.name} (${a.format})</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">2. 选择已发布的抽取方案版本</label>
+                <select id="ext-wiz-schema" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+                  ${state.schemas.filter(s => s.status === 'published').map(s => `<option value="${s.id}">${s.name} (${s.version})</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">3. 选择敏感数据 PII 脱敏策略</label>
+                <select id="ext-wiz-sec" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+                  ${state.securityPolicies.map(p => `<option value="${p.id}">${p.name} (${p.version})</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="p-3 bg-blue-50/50 rounded-xl text-[11px] text-slate-600 space-y-1 border border-blue-100">
+                <div class="font-bold text-apple-blue flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 隐私保护说明：</div>
+                <p>提交后模型仅接收被稳定令牌 (Token) 替换后的脱敏文本，真实明文在受控服务器安全解密。</p>
+              </div>
+
+              <div class="pt-4 flex justify-end gap-3 border-t">
+                <a href="#extraction" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</a>
+                <button type="submit" class="px-5 py-2 bg-apple-blue hover:bg-apple-blueHover text-white text-xs font-medium rounded-lg shadow-sm">发起任务流水线</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function submitExtractionWizard() {
+      showToast('抽取任务已创建，正在排队解析与令牌化...');
+      setTimeout(() => {
+        state.extractionTasks.unshift({
+          id: 'ext-' + Date.now(),
+          docName: '2026年度远东科技IT基础设施采购合同.docx',
+          schemaName: '通用合同关键字段抽取方案',
+          status: 'review_required',
+          confidence: 92.5,
+          stage: '等待复核',
+          progress: 100,
+          createdAt: '刚刚'
+        });
+        navigateTo('#extraction');
+        showToast('抽取完成，已自动进入复核队列！');
+      }, 1200);
+    }
+
+    // 3-Pane Review Workbench
+    function renderExtractionReviewPage() {
+      return `
+        <div class="h-[calc(100vh-80px)] flex flex-col space-y-3 fade-in">
+          <!-- Top Control Header -->
+          <div class="bg-white px-4 py-3 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+              <a href="#extraction" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <div>
+                <h1 class="text-xs font-bold text-slate-900">华东区供应商准入材料_远东科技.pdf - 抽取字段人工复核</h1>
+                <p class="text-[10px] text-slate-400">方案：供应商准入资质审验方案 (v1.0) | 整体置信度：<span class="text-emerald-600 font-bold">94.2%</span></p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="confirmAction('驳回整份抽取结果', '驳回后该次结果将被作废，需重新调度解析。', () => showToast('已驳回抽取', 'warning'), true)" class="px-3 py-1.5 text-xs text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg font-medium">整份驳回</button>
+              <button onclick="confirmAction('批准抽取数据', '确认所有必填字段已无误复核？批准后数据不可变。', () => { showToast('复核已成功批准，已导出结构化 JSON！'); navigateTo('#extraction'); })" class="px-4 py-1.5 text-xs bg-apple-blue hover:bg-apple-blueHover text-white rounded-lg font-medium shadow-sm">批准确认并入库</button>
+            </div>
+          </div>
+
+          <!-- Three-Pane Flex Layout -->
+          <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0 overflow-hidden">
+            <!-- Left Pane: PDF & Evidence Highlights (5 cols) -->
+            <div class="lg:col-span-5 bg-slate-800 rounded-apple-card p-4 text-white flex flex-col justify-between overflow-hidden relative">
+              <div class="text-[11px] text-slate-300 font-medium flex justify-between border-b border-slate-700 pb-2 mb-2">
+                <span>PDF 原文高亮证据定位器</span>
+                <span class="text-emerald-400">已匹配 8/8 处高亮锚点</span>
+              </div>
+              <div class="flex-1 bg-white text-slate-900 rounded p-6 overflow-y-auto space-y-3 font-serif text-xs leading-relaxed relative">
+                <div class="p-2 bg-amber-100 border-2 border-amber-500 rounded font-sans font-bold">
+                  高亮证据 [1]: 上海远东信息技术服务有限公司
+                </div>
+                <p>供应商统一社会信用代码：91310115MA1K39XX89</p>
+                <div class="p-2 bg-emerald-100 border-2 border-emerald-500 rounded font-mono font-bold">
+                  高亮证据 [2]: 注册资本人民币 5,000.00 万元整
+                </div>
+                <p>经营范围：软件开发、信息系统集成服务、数据处理和存储支持服务。</p>
+              </div>
+            </div>
+
+            <!-- Middle Pane: JSON / Field Tree (3 cols) -->
+            <div class="lg:col-span-3 bg-white rounded-apple-card border border-apple-border p-3 overflow-y-auto space-y-2 text-xs">
+              <div class="font-bold text-slate-800 border-b pb-2">结构化字段清单</div>
+              <div class="space-y-1">
+                <button class="w-full text-left p-2 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-between font-semibold text-slate-900">
+                  <span>1. 供应商名称</span>
+                  <span class="text-[10px] text-emerald-600 font-bold">98%</span>
+                </button>
+                <button class="w-full text-left p-2 rounded-lg hover:bg-slate-50 border border-transparent flex items-center justify-between text-slate-700">
+                  <span>2. 社会信用代码</span>
+                  <span class="text-[10px] text-emerald-600 font-bold">96%</span>
+                </button>
+                <button class="w-full text-left p-2 rounded-lg hover:bg-slate-50 border border-transparent flex items-center justify-between text-slate-700">
+                  <span>3. 注册资本金</span>
+                  <span class="text-[10px] text-amber-600 font-bold">82%</span>
+                </button>
+                <button class="w-full text-left p-2 rounded-lg hover:bg-slate-50 border border-transparent flex items-center justify-between text-slate-700">
+                  <span>4. 法人代表联系电话</span>
+                  <span class="text-[10px] text-rose-600 font-bold">脱敏</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Pane: Field Value & Candidate Override Inspector (4 cols) -->
+            <div class="lg:col-span-4 bg-white rounded-apple-card border border-apple-border p-4 overflow-y-auto space-y-4 text-xs">
+              <div class="border-b pb-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase">当前选中字段节点</span>
+                <h3 class="text-sm font-bold text-slate-900">1. 供应商名称 (vendor_name)</h3>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">模型智能抽取值</label>
+                  <input type="text" id="field-val-input" value="上海远东信息技术服务有限公司" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-900 focus:ring-2 focus:ring-apple-blue">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">修正原因说明 (人工干预保留审计)</label>
+                  <input type="text" placeholder="若手动修改请输入修改理由..." class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-600">
+                </div>
+
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">LLM 多粒度候选展开值</label>
+                  <div class="space-y-1">
+                    <button onclick="document.getElementById('field-val-input').value='上海远东信息技术服务有限公司'" class="w-full text-left p-2 bg-slate-50 hover:bg-slate-100 rounded border text-[11px] text-slate-700">
+                      候选 A: 上海远东信息技术服务有限公司 (置信度 98%)
+                    </button>
+                    <button onclick="document.getElementById('field-val-input').value='远东信息技术'" class="w-full text-left p-2 bg-slate-50 hover:bg-slate-100 rounded border text-[11px] text-slate-700">
+                      候选 B: 远东信息技术 (置信度 72%)
+                    </button>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <div class="font-bold text-slate-700">敏感保护等级：中</div>
+                  <div class="text-[10px] text-slate-400">掩码后的展示：${maskSensitive('13812345678', '电话')}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- F. Template Center & Editor Page ---
+    function renderTemplatesPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">模板中心</h1>
+              <p class="text-xs text-slate-500">管理已发布的业务 fillable/reference 文档模板范本。</p>
+            </div>
+            <a href="#assets" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="plus" class="w-4 h-4"></i> 从原件新建模板
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${state.templates.map(tpl => `
+              <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold text-[10px] rounded">${tpl.version}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${tpl.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                      ${tpl.status === 'published' ? '已发布可用' : '编辑草稿'}
+                    </span>
+                  </div>
+                  <h3 class="text-sm font-bold text-slate-900">${escapeHtml(tpl.name)}</h3>
+                  <p class="text-xs text-slate-400 mt-1">属性: ${tpl.type} | 绑定字段: ${tpl.fieldsBound} 个</p>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <a href="#template-editor?id=${tpl.id}" class="text-apple-blue font-semibold text-xs hover:underline">去设计器编辑</a>
+                  ${tpl.type === 'fillable' && tpl.status === 'published' ? `
+                    <a href="#bizdoc-wizard?tplId=${tpl.id}" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-medium rounded-md shadow-sm">新建业务文档</a>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTemplateEditorPage() {
+      return `
+        <div class="space-y-4 fade-in">
+          <!-- Top Editor Bar -->
+          <div class="bg-white p-4 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <a href="#templates" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <div>
+                <h1 class="text-base font-bold text-slate-900">法务标准采购框架合同模板 (设计器)</h1>
+                <p class="text-xs text-slate-400">正在编辑模板草稿 | 自动保存已启用</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="showToast('正在运行 DOCX/PDF 绑定校验与质量检查报告...', 'info')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg font-medium">质量检查</button>
+              <button onclick="confirmAction('发布模板版本', '发布后该模板版本冻结，可用于生成正式业务文档。', () => { showToast('模板 v3.0 发布成功！'); navigateTo('#templates'); })" class="px-4 py-1.5 bg-apple-blue hover:bg-apple-blueHover text-white text-xs rounded-lg font-medium shadow-sm">发布模板</button>
+            </div>
+          </div>
+
+          <!-- Split Workbench: Rich Canvas Simulator & Right Sidebar Binding -->
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Left Canvas Document Simulator (3 cols) -->
+            <div class="lg:col-span-3 bg-slate-200 rounded-apple-card p-8 flex flex-col items-center justify-center min-h-[550px]">
+              <!-- Paper Canvas -->
+              <div class="bg-white shadow-2xl rounded-sm w-full max-w-2xl min-h-[600px] p-12 space-y-6 text-xs leading-relaxed font-serif text-slate-800 border">
+                <div class="text-center text-lg font-bold font-sans tracking-wide border-b pb-4">采购框架协议模板范本</div>
+                <p>甲方：<span class="px-2 py-1 bg-amber-100 border border-amber-300 rounded font-sans font-bold text-amber-900">${'${party_a}'} [绑定: 甲方名称]</span></p>
+                <p>乙方：<span class="px-2 py-1 bg-amber-100 border border-amber-300 rounded font-sans font-bold text-amber-900">${'${party_b}'} [绑定: 乙方名称]</span></p>
+                <p>双方就合作事宜达成如下协议，合同总金额不高于人民币 <span class="px-2 py-1 bg-emerald-100 border border-emerald-300 rounded font-sans font-bold text-emerald-900">${'${amount}'} [绑定: 合同金额]</span>。</p>
+              </div>
+            </div>
+
+            <!-- Right Sidebar: Field Binding List -->
+            <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm space-y-4 text-xs">
+              <div class="flex items-center justify-between border-b pb-2">
+                <h3 class="font-bold text-slate-900">Content Control 锚点</h3>
+                <button onclick="showToast('已绑定新文本 Content Control', 'info')" class="text-apple-blue font-semibold hover:underline">+ 绑定字段</button>
+              </div>
+
+              <div class="space-y-2">
+                <div class="p-3 bg-slate-50 border rounded-xl space-y-1">
+                  <div class="font-bold text-slate-800">1. party_a (甲方全称)</div>
+                  <div class="text-[10px] text-slate-400">类型: string | 必填: 是</div>
+                </div>
+                <div class="p-3 bg-slate-50 border rounded-xl space-y-1">
+                  <div class="font-bold text-slate-800">2. amount (合同金额)</div>
+                  <div class="text-[10px] text-slate-400">类型: number | 边界: &gt; 0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- G. Business Docs & Creation Wizard ---
+    function renderBizDocsPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">业务文档中心</h1>
+              <p class="text-xs text-slate-500">从 fillable 模板生成承载业务数据并参与流转的业务文档（无版本号，仅唯一当前内容）。</p>
+            </div>
+            <a href="#bizdoc-wizard" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="plus" class="w-4 h-4"></i> 新建业务文档
+            </a>
+          </div>
+
+          <!-- Biz Docs Table -->
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">业务文档名称</th>
+                  <th class="p-3.5">来源模板</th>
+                  <th class="p-3.5">编辑模式</th>
+                  <th class="p-3.5">流转状态</th>
+                  <th class="p-3.5">当前责任处理人</th>
+                  <th class="p-3.5 pr-6 text-right">主要操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${state.bizDocs.map(b => `
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3.5 pl-6 font-semibold text-slate-900">
+                      <a href="#bizdoc-detail?id=${b.id}" class="hover:text-apple-blue flex items-center gap-2">
+                        <i data-lucide="file-signature" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span>${escapeHtml(b.name)}</span>
+                      </a>
+                    </td>
+                    <td class="p-3.5 text-slate-500">${escapeHtml(b.tplName)} (${b.tplVersion})</td>
+                    <td class="p-3.5">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.mode === 'internal' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}">
+                        ${b.mode === 'internal' ? '内部编辑' : '外部填写'}
+                      </span>
+                    </td>
+                    <td class="p-3.5">
+                      ${b.status === 'editing_internal' ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">内部编辑中</span>' : ''}
+                      ${b.status === 'editing_external' ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800">外部填写中</span>' : ''}
+                      ${b.status === 'awaiting_approval' ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">待审批</span>' : ''}
+                      ${b.status === 'completed' ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-700">归档完成</span>' : ''}
+                    </td>
+                    <td class="p-3.5 text-slate-700 font-medium">${b.currentAssignee}</td>
+                    <td class="p-3.5 pr-6 text-right space-x-2">
+                      ${b.status === 'editing_internal' ? `<a href="#bizdoc-edit?id=${b.id}" class="text-apple-blue font-medium hover:underline">正文编辑</a>` : ''}
+                      ${b.status === 'editing_external' ? `<button onclick="copyExternalLink('${b.id}')" class="text-purple-600 font-medium hover:underline">复制外部链接</button>` : ''}
+                      <a href="#bizdoc-detail?id=${b.id}" class="text-slate-500 hover:underline">时间线与快照</a>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBizDocWizardPage() {
+      return `
+        <div class="max-w-2xl mx-auto space-y-6 fade-in py-4">
+          <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-6">
+            <div class="border-b pb-4">
+              <h1 class="text-lg font-bold text-slate-900">四步创建业务文档向导</h1>
+              <p class="text-xs text-slate-400 mt-1">仅能选择已发布的 fillable 模板生成承载业务流转的文档对象。</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); submitBizDocWizard();" class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">1. 选择已发布的 fillable 模板范本</label>
+                <select id="biz-wiz-tpl" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
+                  ${state.templates.filter(t => t.type === 'fillable' && t.status === 'published').map(t => `<option value="${t.id}">${t.name} (${t.version})</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">2. 业务文档标题</label>
+                <input type="text" id="biz-wiz-title" value="2026年度新版采购合同范本" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-apple-blue">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">3. 选择唯一编辑处理模式 (二者互斥)</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="p-3 border-2 border-apple-blue bg-blue-50/40 rounded-xl flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="biz-mode" value="internal" checked class="text-apple-blue">
+                    <div>
+                      <div class="text-xs font-bold text-slate-900">内部编辑模式</div>
+                      <div class="text-[10px] text-slate-400">指定内部唯一编辑人</div>
+                    </div>
+                  </label>
+                  <label class="p-3 border border-slate-200 rounded-xl flex items-center gap-2 cursor-pointer hover:border-slate-300">
+                    <input type="radio" name="biz-mode" value="external" class="text-apple-blue">
+                    <div>
+                      <div class="text-xs font-bold text-slate-900">外部链接填写</div>
+                      <div class="text-[10px] text-slate-400">生成外部短期授权链接</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">4. 配置顺序多级审批链</label>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">1</span>
+                    <span>一级审批：陈嘉宁 (法务复核)</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">2</span>
+                    <span>二级审批：周明远 (部门负责人)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-4 flex justify-end gap-3 border-t">
+                <a href="#bizdocs" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</a>
+                <button type="submit" class="px-5 py-2 bg-apple-blue hover:bg-apple-blueHover text-white text-xs font-medium rounded-lg shadow-sm">生成业务文档对象</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function submitBizDocWizard() {
+      const mode = document.querySelector('input[name="biz-mode"]:checked')?.value || 'internal';
+      showToast('正在实例化业务文档对象...');
+      setTimeout(() => {
+        state.bizDocs.unshift({
+          id: 'biz-' + Date.now(),
+          name: document.getElementById('biz-wiz-title')?.value || '新建业务文档',
+          tplName: '法务标准采购框架合同模板',
+          tplVersion: 'v3.0',
+          mode: mode,
+          status: mode === 'internal' ? 'editing_internal' : 'editing_external',
+          editor: mode === 'internal' ? state.currentUser.name : '外部填写人',
+          currentAssignee: mode === 'internal' ? state.currentUser.name : '外部填写人 (链接已生成)',
+          approvers: ['陈嘉宁', '周明远'],
+          updatedAt: '刚刚',
+          fields: { '甲方名称': 'DocMind 科技有限公司' }
+        });
+        navigateTo('#bizdocs');
+        showToast('业务文档已创建成功！');
+      }, 800);
+    }
+
+    function renderBizDocEditPage() {
+      const doc = state.bizDocs.find(b => b.id === state.params.id) || state.bizDocs[0];
+
+      return `
+        <div class="space-y-4 fade-in">
+          <div class="bg-white p-4 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <a href="#bizdocs" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <div>
+                <h1 class="text-base font-bold text-slate-900">${escapeHtml(doc.name)} (正文填写)</h1>
+                <p class="text-xs text-slate-400">内部编辑中 | 无版本号显示 | 独占编辑租约由您持有</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="showToast('草稿已保存更新到单一步骤对象！', 'success')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg font-medium">保存草稿</button>
+              <button onclick="confirmAction('提交流转审批', '提交后将生成不可变内部审计快照，并向第一位审批人陈嘉宁发起待办。', () => { doc.status='awaiting_approval'; doc.currentAssignee='陈嘉宁 (待一级审批)'; showToast('已成功提交审批！'); navigateTo('#bizdocs'); })" class="px-4 py-1.5 bg-apple-blue hover:bg-apple-blueHover text-white text-xs rounded-lg font-medium shadow-sm">提交审批</button>
+            </div>
+          </div>
+
+          <!-- Interactive Document Inline Filling Form -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-slate-100 rounded-apple-card p-8 flex flex-col items-center justify-center min-h-[500px]">
+              <div class="bg-white p-10 rounded shadow-xl w-full max-w-xl space-y-4 text-xs font-serif leading-relaxed border">
+                <div class="text-center font-sans font-bold text-base mb-4 border-b pb-2">2026年度采购合同正文 (原位置同步)</div>
+                <p>甲方：<span class="font-bold underline text-blue-700">${doc.fields['甲方名称'] || 'DocMind 科技有限公司'}</span></p>
+                <p>乙方：<span class="font-bold underline text-blue-700">${doc.fields['乙方名称'] || '远东信息技术有限公司'}</span></p>
+                <p>合同编号：<span class="font-bold font-mono text-slate-800">${doc.fields['合同编号'] || 'DM-2026-CT-089'}</span></p>
+                <p>总金额：<span class="font-bold text-emerald-700">${doc.fields['合同金额'] || '¥ 1,280,000.00'}</span></p>
+              </div>
+            </div>
+
+            <!-- Right Field Inspector Sync Panel -->
+            <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm space-y-4 text-xs">
+              <h3 class="font-bold text-slate-900 border-b pb-2">模板绑定字段面板</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">合同编号</label>
+                  <input type="text" value="${doc.fields['合同编号'] || 'DM-2026-CT-089'}" class="w-full bg-slate-50 border rounded-lg p-2 font-mono">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">乙方名称 (供应商)</label>
+                  <input type="text" value="${doc.fields['乙方名称'] || '远东信息技术有限公司'}" class="w-full bg-slate-50 border rounded-lg p-2 font-medium">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">合同金额</label>
+                  <input type="text" value="${doc.fields['合同金额'] || '¥ 1,280,000.00'}" class="w-full bg-slate-50 border rounded-lg p-2 font-bold text-emerald-600">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBizDocDetailPage() {
+      const doc = state.bizDocs.find(b => b.id === state.params.id) || state.bizDocs[0];
+
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <a href="#bizdocs" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <div>
+                <h1 class="text-base font-bold text-slate-900">${escapeHtml(doc.name)}</h1>
+                <p class="text-xs text-slate-400">来源模板：${doc.tplName} | 当前责任人: ${doc.currentAssignee}</p>
+              </div>
+            </div>
+            <a href="#compare-new?bizId=${doc.id}" class="px-3.5 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-all">对比与调整此文档</a>
+          </div>
+
+          <!-- Timeline & Audit Snapshots -->
+          <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 border-b pb-2">流转时间线与内部审计快照</h3>
+            <div class="space-y-4 text-xs">
+              <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-blue-100 text-apple-blue flex items-center justify-center font-bold text-[10px] shrink-0">1</div>
+                <div>
+                  <div class="font-bold text-slate-800">由 ${doc.editor} 创建业务文档</div>
+                  <div class="text-[10px] text-slate-400">2026-08-04 10:00:00 | 关联模板 ${doc.tplVersion}</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] shrink-0">2</div>
+                <div>
+                  <div class="font-bold text-slate-800">提交审批 (内部审计快照已产生)</div>
+                  <div class="text-[10px] text-slate-400">2026-08-04 14:30:12 | 快照 SHA-256: d9e8f...a102</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- H. Tasks & Approval Page ---
+    function renderTasksPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="border-b pb-3">
+            <h1 class="text-lg font-bold text-slate-900">我的待办事项</h1>
+            <p class="text-xs text-slate-500">集中处理内部流转文档的只读审批与抽取复核项。</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="#approval-view?id=biz-503" class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm hover:shadow-md transition-all space-y-3 block">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[10px] font-bold">待一级审批</span>
+                <span class="text-[10px] text-slate-400">今天 14:30</span>
+              </div>
+              <h3 class="text-sm font-bold text-slate-900">《云端服务器租赁补充协议》</h3>
+              <p class="text-xs text-slate-500">编辑提交人：赵子涵 | 拟定金额：¥ 450,000.00</p>
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderApprovalViewPage() {
+      const doc = state.bizDocs.find(b => b.id === state.params.id) || state.bizDocs[2];
+
+      return `
+        <div class="space-y-6 fade-in max-w-4xl mx-auto py-2">
+          <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between">
+            <div>
+              <div class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded inline-block mb-1">审批待办 (只读模式)</div>
+              <h1 class="text-base font-bold text-slate-900">${escapeHtml(doc.name)}</h1>
+              <p class="text-xs text-slate-400 mt-0.5">提交审计快照 SHA-256: d9e8...f102 | 审批人不可编辑正文</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="openRejectModal('${doc.id}')" class="px-3.5 py-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg text-xs font-semibold">驳回修改</button>
+              <button onclick="confirmAction('批准通过此文档', '批准后文档将流转至下一级审批人或直接归档锁定。', () => { doc.status='completed'; doc.currentAssignee='归档锁存'; showToast('审批已通过！'); navigateTo('#bizdocs'); })" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm">批准同意</button>
+            </div>
+          </div>
+
+          <!-- Readonly Document Preview Snapshot -->
+          <div class="bg-slate-100 p-8 rounded-apple-card border flex items-center justify-center">
+            <div class="bg-white p-10 rounded shadow-lg w-full max-w-xl space-y-4 text-xs font-serif leading-relaxed">
+              <div class="text-center font-bold text-base font-sans border-b pb-2">提交审阅快照正文</div>
+              <p>甲方：DocMind 科技有限公司</p>
+              <p>乙方：阿里云计算有限公司</p>
+              <p>补充条款：增加 50 台高性能 GPU 算力实例托管，服务期自 2026年08月起算。</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openRejectModal(docId) {
+      openModal(`
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="text-base font-bold text-slate-900">驳回审批理由</h3>
+            <button onclick="closeModal()"><i data-lucide="x" class="w-4 h-4 text-slate-400"></i></button>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">驳回原因 (必填)</label>
+            <textarea id="reject-reason-input" rows="3" required placeholder="说明正文修改诉求或合规隐患..." class="w-full bg-slate-50 border rounded-lg p-2.5 text-xs"></textarea>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closeModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+            <button onclick="submitReject('${docId}')" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg">确认驳回退回</button>
+          </div>
+        </div>
+      `);
+    }
+
+    function submitReject(docId) {
+      const reason = document.getElementById('reject-reason-input')?.value;
+      if (!reason) {
+        showToast('请填写驳回原因！', 'error');
+        return;
+      }
+      closeModal();
+      const doc = state.bizDocs.find(b => b.id === docId);
+      if (doc) {
+        doc.status = 'editing_internal';
+        doc.currentAssignee = doc.editor;
+      }
+      showToast('已驳回该文档，退回编辑人重新发起，审批链将重置！', 'warning');
+      navigateTo('#bizdocs');
+    }
+
+    // --- I. External Submissions Management ---
+    function renderExternalMgmtPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="border-b pb-3">
+            <h1 class="text-lg font-bold text-slate-900">外部填写提交管理</h1>
+            <p class="text-xs text-slate-500">管理对外生成的填写链接、访问码、尝试次数及撤销状态。</p>
+          </div>
+
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">关联业务文档</th>
+                  <th class="p-3.5">访问码</th>
+                  <th class="p-3.5">尝试次数上限</th>
+                  <th class="p-3.5">状态</th>
+                  <th class="p-3.5 pr-6 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="p-3.5 pl-6 font-semibold text-slate-900">《供应商保密协议_上海启航软件》</td>
+                  <td class="p-3.5 font-mono">1234</td>
+                  <td class="p-3.5">1 / 3 次</td>
+                  <td class="p-3.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] bg-purple-100 text-purple-800 font-semibold">对外开放中</span></td>
+                  <td class="p-3.5 pr-6 text-right space-x-2">
+                    <button onclick="copyExternalLink('biz-502')" class="text-purple-600 font-medium hover:underline">复制填写链接</button>
+                    <button onclick="confirmAction('撤销外部链接', '撤销后外部用户将无法再次访问填写。', () => showToast('链接已废除', 'warning'), true)" class="text-rose-500 hover:underline">撤销链接</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function copyExternalLink(bizId) {
+      const url = `${window.location.origin}${window.location.pathname}#external-fill?id=${bizId}`;
+      navigator.clipboard.writeText(url);
+      showToast('已复制无需登录的外部填写链接到剪贴板！', 'success');
+    }
+
+    // External Fill Standalone Page
+    function renderExternalFillPage() {
+      return `
+        <div class="min-h-screen w-screen bg-[#F5F5F7] flex flex-col items-center justify-center p-4">
+          <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-lg w-full p-8 slide-up space-y-6">
+            <div class="text-center border-b pb-4">
+              <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xl mx-auto shadow-md mb-2">
+                <i data-lucide="external-link" class="w-5 h-5"></i>
+              </div>
+              <h1 class="text-lg font-bold text-slate-900">DocMind 外部授权字段填写</h1>
+              <p class="text-xs text-slate-400 mt-0.5">关联业务文档：供应商保密协议_上海启航软件</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); showToast('外部提交成功！已生成审计快照闭环。'); navigateTo('#login');" class="space-y-4 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">访问授权码 (Access Code)</label>
+                <input type="text" value="1234" required class="w-full bg-slate-50 border rounded-lg p-2.5 font-mono">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">乙方公司法定名称</label>
+                <input type="text" value="上海启航软件服务有限公司" required class="w-full bg-slate-50 border rounded-lg p-2.5 font-medium">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">约定保密期限</label>
+                <input type="text" value="3年" required class="w-full bg-slate-50 border rounded-lg p-2.5">
+              </div>
+
+              <div class="p-3 bg-purple-50 text-purple-900 rounded-xl text-[11px] border border-purple-100">
+                提示：提交后该填写窗口将自动关闭，并同步向内部审核人员发送通知。
+              </div>
+
+              <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-medium shadow-md transition-all text-xs">
+                安全提交内容
+              </button>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- J. Document Comparison & Adjust ---
+    function renderComparePage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">文档差异对比与调整</h1>
+              <p class="text-xs text-slate-500">支持 3 种来源组合对比，高亮展示文本、结构、表格及绑定字段差异。</p>
+            </div>
+            <a href="#compare-new" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="plus" class="w-4 h-4"></i> 新建文档对比
+            </a>
+          </div>
+
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">对比任务名称</th>
+                  <th class="p-3.5">基线文档 A</th>
+                  <th class="p-3.5">比较文档 B</th>
+                  <th class="p-3.5">差异项数</th>
+                  <th class="p-3.5 pr-6 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${state.compareTasks.map(c => `
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3.5 pl-6 font-bold text-slate-900">${escapeHtml(c.title)}</td>
+                    <td class="p-3.5 text-slate-600">${escapeHtml(c.docA)}</td>
+                    <td class="p-3.5 text-slate-600">${escapeHtml(c.docB)}</td>
+                    <td class="p-3.5 font-bold text-amber-600">${c.diffCount} 处差异</td>
+                    <td class="p-3.5 pr-6 text-right">
+                      <a href="#compare-result?id=${c.id}" class="px-3 py-1 bg-apple-blue text-white rounded-md text-[11px] font-medium shadow-sm">进入对比 Diff</a>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCompareNewPage() {
+      return `
+        <div class="max-w-2xl mx-auto space-y-6 fade-in py-4">
+          <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-6">
+            <div class="border-b pb-4">
+              <h1 class="text-lg font-bold text-slate-900">新建文档对比任务</h1>
+              <p class="text-xs text-slate-400 mt-1">选择 A/B 两个槽位的来源文件（上传文件 / 系统原件 / 业务文档）</p>
+            </div>
+
+            <form onsubmit="event.preventDefault(); submitNewCompare();" class="space-y-4 text-xs">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <label class="block font-bold text-slate-800">基线文档 A (标准源)</label>
+                  <select id="cmp-doc-a" class="w-full bg-white border rounded-lg p-2">
+                    <option value="tpl-401">法务标准采购框架合同模板 (v3.0)</option>
+                    <option value="ast-101">采购框架协议_2026正式版.docx (上传原件)</option>
+                  </select>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <label class="block font-bold text-slate-800">比较文档 B (待比对对象)</label>
+                  <select id="cmp-doc-b" class="w-full bg-white border rounded-lg p-2">
+                    <option value="biz-501">2026年度远东科技IT基础设施采购合同 (业务文档)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">模式选择</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="p-3 border border-slate-200 rounded-xl flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="cmp-mode" value="readonly">
+                    <div>
+                      <div class="font-bold text-slate-800">仅对比 (只读模式)</div>
+                      <div class="text-[10px] text-slate-400">仅生成权威 Diff 不修改任何文档</div>
+                    </div>
+                  </label>
+                  <label class="p-3 border-2 border-apple-blue bg-blue-50/40 rounded-xl flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="cmp-mode" value="adjust" checked>
+                    <div>
+                      <div class="font-bold text-slate-800">对比并调整</div>
+                      <div class="text-[10px] text-slate-400">允许将 A 内容应用并更新到目标业务文档</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="pt-4 flex justify-end gap-3 border-t">
+                <a href="#compare" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</a>
+                <button type="submit" class="px-5 py-2 bg-apple-blue hover:bg-apple-blueHover text-white text-xs font-medium rounded-lg shadow-sm">运行权威 Diff</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function submitNewCompare() {
+      showToast('正在解析文本节点与提取结构化 Diff...');
+      setTimeout(() => {
+        state.compareTasks.unshift({
+          id: 'cmp-' + Date.now(),
+          title: '2026年新补充协议 与 标准模板 对比',
+          docA: '法务标准采购框架合同模板 (v3.0)',
+          docB: '2026年度远东科技IT基础设施采购合同 (业务文档)',
+          mode: 'adjust',
+          status: 'completed',
+          diffCount: 3,
+          createdAt: '刚刚'
+        });
+        navigateTo('#compare');
+        showToast('对比完成！');
+      }, 1000);
+    }
+
+    function renderCompareResultPage() {
+      return `
+        <div class="space-y-4 fade-in">
+          <div class="bg-white p-4 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <a href="#compare" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <div>
+                <h1 class="text-base font-bold text-slate-900">权威 Diff 结果展示 (对比并调整模式)</h1>
+                <p class="text-xs text-slate-400">基线 A: 法务标准模板 (只读) | 调整目标 B: 2026年度远东科技IT基础设施采购合同 (可保存)</p>
+              </div>
+            </div>
+
+            <button onclick="showToast('已保存对业务文档 B 的调整内容！', 'success')" class="px-4 py-1.5 bg-apple-blue hover:bg-apple-blueHover text-white text-xs font-medium rounded-lg shadow-sm">保存调整到文档 B</button>
+          </div>
+
+          <!-- Side-by-Side Diff Canvas -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Left Side A Readonly -->
+            <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-3">
+              <div class="text-xs font-bold text-slate-900 border-b pb-2 flex justify-between">
+                <span>文档 A: 法务标准模板 (基线)</span>
+                <span class="text-slate-400">只读</span>
+              </div>
+              <div class="p-4 bg-slate-50 rounded-xl text-xs space-y-2 leading-relaxed">
+                <p>条款 1.1：本框架协议质保服务期限为 <span class="diff-del">36 个月</span>。</p>
+                <p>条款 2.4：违约金比例为合同总金额的 <span class="diff-add">15%</span>。</p>
+              </div>
+            </div>
+
+            <!-- Right Side B Editable Target -->
+            <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-3">
+              <div class="text-xs font-bold text-slate-900 border-b pb-2 flex justify-between">
+                <span>文档 B: 2026年度远东科技合同 (调整目标)</span>
+                <button onclick="showToast('已将 A 的 36个月 覆盖更新到 B！', 'info')" class="text-apple-blue text-[11px] font-semibold hover:underline">将 A 的更改应用到 B</button>
+              </div>
+              <div class="p-4 bg-blue-50/30 rounded-xl text-xs space-y-2 leading-relaxed border border-blue-100">
+                <p>条款 1.1：本框架协议质保服务期限为 <span class="diff-mod">24 个月</span>。</p>
+                <p>条款 2.4：违约金比例为合同总金额的 10%。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- K. AI Smart Review & Assistant ---
+    function renderReviewPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">智能审阅中心</h1>
+              <p class="text-xs text-slate-500">自动检测错别字、标点、语法、金额矛盾并提供证据对齐辅佐。</p>
+            </div>
+            <a href="#review-detail" class="px-4 py-2 bg-apple-blue hover:bg-apple-blueHover text-white rounded-apple-btn text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 self-start">
+              <i data-lucide="bot" class="w-4 h-4"></i> 发起新智能审阅
+            </a>
+          </div>
+
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">审阅文档</th>
+                  <th class="p-3.5">AI 质量综合评分</th>
+                  <th class="p-3.5">发现潜在告警项</th>
+                  <th class="p-3.5">状态</th>
+                  <th class="p-3.5 pr-6 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${state.reviewTasks.map(r => `
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-3.5 pl-6 font-bold text-slate-900">${escapeHtml(r.docName)}</td>
+                    <td class="p-3.5 font-bold text-emerald-600">${r.score} 分</td>
+                    <td class="p-3.5 font-bold text-amber-600">${r.issuesCount} 处建议</td>
+                    <td class="p-3.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-semibold">等待人工确认</span></td>
+                    <td class="p-3.5 pr-6 text-right">
+                      <a href="#review-detail?id=${r.id}" class="px-3 py-1 bg-apple-blue text-white rounded-md text-[11px] font-medium shadow-sm">进入 AI 审阅助手</a>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderReviewDetailPage() {
+      return `
+        <div class="h-[calc(100vh-80px)] flex flex-col space-y-3 fade-in">
+          <div class="bg-white px-4 py-3 rounded-apple-card border border-apple-border shadow-sm flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+              <a href="#review" class="text-slate-400 hover:text-slate-600"><i data-lucide="arrow-left" class="w-4 h-4"></i></a>
+              <h1 class="text-xs font-bold text-slate-900">2026年度远东科技IT基础设施采购合同 - 智能审阅与 AI 助手</h1>
+            </div>
+            <button onclick="showToast('已确认接受所有 AI 修订建议！', 'success')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium shadow-sm">接受全部修改并保存</button>
+          </div>
+
+          <!-- Split Workbench: Left Doc Editor & Right AI Chat/Findings -->
+          <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0 overflow-hidden">
+            <!-- Left Doc Text Viewer (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-100 rounded-apple-card p-6 overflow-y-auto space-y-4">
+              <div class="bg-white p-8 rounded shadow border space-y-3 text-xs font-serif leading-relaxed">
+                <p>合同大写金额：大写肆拾伍万元整 (<span class="bg-amber-100 border-b-2 border-amber-500 font-bold">小写：¥ 450,000.00</span>)。</p>
+                <p>违约责任说明：乙方如逾期交付，按每日 <span class="bg-rose-100 border-b-2 border-rose-500 font-bold">万分之五 (错别字检测)</span> 支付违约金。</p>
+              </div>
+            </div>
+
+            <!-- Right AI Assistant Drawer (5 cols) -->
+            <div class="lg:col-span-5 bg-white rounded-apple-card border border-apple-border p-4 flex flex-col justify-between overflow-hidden space-y-3 text-xs">
+              <div class="font-bold border-b pb-2 flex items-center justify-between">
+                <span class="flex items-center gap-1.5 text-slate-900"><i data-lucide="bot" class="w-4 h-4 text-apple-blue"></i> AI 文档助手建议</span>
+                <span class="text-[10px] text-slate-400">依据上下文校验</span>
+              </div>
+
+              <!-- Findings Cards -->
+              <div class="flex-1 overflow-y-auto space-y-2">
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+                  <div class="font-bold text-amber-900 flex justify-between">
+                    <span>1. 金额与数字一致性提示</span>
+                    <span class="text-[10px] bg-amber-200 px-1.5 rounded">中风险</span>
+                  </div>
+                  <p class="text-[11px] text-slate-700">大写“肆拾伍万元整”与小写“¥ 450,000.00”已自动比对一致。</p>
+                  <div class="pt-1 flex gap-2">
+                    <button onclick="showToast('已采纳采信此项记录', 'success')" class="px-2 py-0.5 bg-amber-600 text-white text-[10px] rounded font-semibold">采纳建议</button>
+                    <button onclick="showToast('已忽略该条警示', 'info')" class="text-slate-500 hover:underline text-[10px]">忽略</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Q&A Input Box -->
+              <div class="pt-2 border-t space-y-2">
+                <div class="relative">
+                  <input type="text" placeholder="向 AI 提问关于此文档的任何问题..." class="w-full bg-slate-50 border rounded-xl pl-3 pr-8 py-2 text-xs focus:ring-2 focus:ring-apple-blue">
+                  <button onclick="showToast('AI 回答：本合同付款方式为分期付款，首付 30%。', 'info')" class="absolute right-2 top-2 text-apple-blue"><i data-lucide="send" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- L. Security Policies Page ---
+    function renderSecurityPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="border-b pb-3 flex justify-between items-center">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">数据安全与 PII 脱敏策略</h1>
+              <p class="text-xs text-slate-500">配置各国家地区（CN, US, JP等）敏感识别正则与稳定令牌加密方案。</p>
+            </div>
+            <button onclick="showToast('策略版本已更新', 'success')" class="px-4 py-2 bg-apple-blue text-white rounded-lg text-xs font-medium">新建安全策略</button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${state.securityPolicies.map(p => `
+              <div class="bg-white p-5 rounded-apple-card border border-apple-border shadow-sm space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="px-2 py-0.5 bg-blue-50 text-apple-blue font-bold text-[10px] rounded">${p.country} / ${p.version}</span>
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-semibold rounded-full">已生效</span>
+                </div>
+                <h3 class="text-sm font-bold text-slate-900">${escapeHtml(p.name)}</h3>
+                <p class="text-xs text-slate-500">包含识别类型: ${p.piiTypes.join(', ')}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // --- M. Settings & Members Page ---
+    function renderMembersPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="border-b pb-3">
+            <h1 class="text-lg font-bold text-slate-900">成员与权限管理</h1>
+            <p class="text-xs text-slate-500">管理工作区成员、角色分配与双人复核开关。</p>
+          </div>
+
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">成员姓名</th>
+                  <th class="p-3.5">工作邮箱</th>
+                  <th class="p-3.5">分配角色</th>
+                  <th class="p-3.5 pr-6 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs">
+                ${state.members.map(m => `
+                  <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-3.5 pl-6 font-bold text-slate-900 flex items-center gap-2">
+                      <img src="${m.avatar}" class="w-6 h-6 rounded-full object-cover">
+                      <span>${escapeHtml(m.name)}</span>
+                    </td>
+                    <td class="p-3.5 text-slate-500">${escapeHtml(m.email)}</td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${ROLES[m.role].badge}">${ROLES[m.role].name}</span></td>
+                    <td class="p-3.5 pr-6 text-right">
+                      <button onclick="showToast('已向用户发送角色调整通知', 'info')" class="text-apple-blue hover:underline">修改角色</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- N. Model Config Page ---
+    function renderModelConfigPage() {
+      return `
+        <div class="max-w-xl mx-auto space-y-6 fade-in py-4">
+          <div class="bg-white p-6 rounded-apple-card border border-apple-border shadow-sm space-y-4 text-xs">
+            <div class="border-b pb-3">
+              <h1 class="text-base font-bold text-slate-900">大模型 API Endpoint 与 Key 配置</h1>
+              <p class="text-xs text-slate-400">配置 Gemini / LLM 密钥与 Prompt 版本掩码控制。</p>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">模型供应商 / 协议</label>
+              <select class="w-full bg-slate-50 border rounded-lg p-2.5">
+                <option>Google Gemini API (Gemini 2.5 Pro)</option>
+                <option>Anthropic Claude 3.5 Sonnet</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">API Key 密钥 (格式掩码)</label>
+              <input type="password" value="AIzaSyA889210-XXXX-XXXX-MASKED" class="w-full bg-slate-50 border rounded-lg p-2.5 font-mono">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+              <button onclick="showToast('连接测试成功！P95 延迟 1.2s', 'success')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg">测试网络连接</button>
+              <button onclick="showToast('模型配置已加密保存', 'success')" class="px-4 py-2 bg-apple-blue text-white rounded-lg">保存配置</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- O. Audit Logs Page ---
+    function renderAuditPage() {
+      return `
+        <div class="space-y-6 fade-in">
+          <div class="border-b pb-3 flex justify-between items-center">
+            <div>
+              <h1 class="text-lg font-bold text-slate-900">不可篡改审计日志</h1>
+              <p class="text-xs text-slate-500">记录系统所有操作者、动作、对象与内部快照结果。</p>
+            </div>
+            <button onclick="showToast('已导出加密审计报告 (CSV)', 'success')" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">导出审计记录</button>
+          </div>
+
+          <div class="bg-white rounded-apple-card border border-apple-border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-apple-border text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <th class="p-3.5 pl-6">时间</th>
+                  <th class="p-3.5">操作者</th>
+                  <th class="p-3.5">执行动作</th>
+                  <th class="p-3.5">目标类型 / ID</th>
+                  <th class="p-3.5">客户端 IP</th>
+                  <th class="p-3.5 pr-6 text-right">结果</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs font-mono">
+                ${state.auditLogs.map(l => `
+                  <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-3.5 pl-6 text-slate-400">${l.time}</td>
+                    <td class="p-3.5 font-bold font-sans text-slate-800">${escapeHtml(l.operator)}</td>
+                    <td class="p-3.5 font-sans font-semibold text-slate-900">${escapeHtml(l.action)}</td>
+                    <td class="p-3.5 text-slate-500">${escapeHtml(l.objectType)} (${l.objectId})</td>
+                    <td class="p-3.5 text-slate-400">${l.ip}</td>
+                    <td class="p-3.5 pr-6 text-right font-sans"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">${l.result}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- P. Drawers & Extras ---
+    function openNotificationsDrawer() {
+      openDrawer(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="font-bold text-slate-900 text-sm">通知中心</h3>
+            <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+
+          <div class="space-y-2">
+            ${state.notifications.map(n => `
+              <a href="${n.targetHash}" onclick="closeDrawer()" class="block p-3 rounded-xl border border-slate-100 hover:border-apple-blue hover:bg-blue-50/30 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-xs text-slate-900">${escapeHtml(n.title)}</span>
+                  <span class="text-[10px] text-slate-400">${n.time}</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1">${escapeHtml(n.content)}</p>
+              </a>
+            `).join('')}
+          </div>
+        </div>
+      `);
+    }
+
+    function renderNoPermissionPage() {
+      return `
+        <div class="h-96 flex flex-col items-center justify-center text-center space-y-3">
+          <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+            <i data-lucide="lock" class="w-6 h-6"></i>
+          </div>
+          <h2 class="text-base font-bold text-slate-900">访问权限受限</h2>
+          <p class="text-xs text-slate-500 max-w-sm">当前演练角色 [${ROLES[state.currentRole].name}] 缺乏此模块的查看或管理权限。</p>
+          <button onclick="switchRole('OWNER')" class="px-4 py-2 bg-apple-blue text-white rounded-lg text-xs font-medium">一键切换为 Workspace Owner</button>
+        </div>
+      `;
+    }
+
+    function render404Page() {
+      return `
+        <div class="h-96 flex flex-col items-center justify-center text-center space-y-3">
+          <h2 class="text-2xl font-bold text-slate-900">404</h2>
+          <p class="text-xs text-slate-500">未找到所请求的页面资源或路由</p>
+          <a href="#workbench" class="px-4 py-2 bg-apple-blue text-white rounded-lg text-xs font-medium">返回工作台</a>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 5. BOOTSTRAP INITIALIZATION
+    // ==========================================
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initRouter();
+    });
+  </script>
+</body>
+</html>
