@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { DmButton } from '@/ui';
 
-import AppIcon from '@/components/AppIcon.vue';
+import { AppIcon } from '@/components/index.js';
 
-import SourceRegister from './components/SourceRegister.vue';
-import SourceTaskPanel from './components/SourceTaskPanel.vue';
-import SourceUploadDialog from './components/SourceUploadDialog.vue';
+import { SourceRegister, SourceTaskPanel, SourceUploadDialog } from './components/index.js';
 import { useSourceRegistry } from './composables/useSourceRegistry.js';
 import { useSourceUpload } from './composables/useSourceUpload.js';
 
@@ -18,11 +16,7 @@ const {
   currentPage,
   filteredSources,
   totalPages,
-  safeCurrentPage,
   pagedSources,
-  pageStart,
-  pageEnd,
-  pageNumbers,
   selectedSource,
   selectSource,
   openSelectedSource,
@@ -71,10 +65,6 @@ const {
         :is-loading="isLoadingSources"
         :load-error="sourceLoadError"
         :total-pages="totalPages"
-        :safe-current-page="safeCurrentPage"
-        :page-start="pageStart"
-        :page-end="pageEnd"
-        :page-numbers="pageNumbers"
         @select="selectSource"
         @reset="resetFilters"
         @reload="loadSources"

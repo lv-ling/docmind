@@ -11,8 +11,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getAuthenticatedObjectUrl } from '@/api/client.js';
 import { getSource, getSourcePreview } from '@/api/sources.js';
-import AppIcon from '@/components/AppIcon.vue';
-import InlineNotice from '@/components/InlineNotice.vue';
+import { AppIcon, InlineNotice } from '@/components/index.js';
 import { RouteName } from '@/router/constants.js';
 import { getQueryString } from '@/router/query.js';
 import { formatBytes } from '@/utils/file.js';

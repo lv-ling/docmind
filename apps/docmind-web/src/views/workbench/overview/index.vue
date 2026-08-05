@@ -3,14 +3,15 @@ import { DmButton } from '@/ui';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import AppIcon from '@/components/AppIcon.vue';
-import InlineNotice from '@/components/InlineNotice.vue';
+import { AppIcon, InlineNotice } from '@/components/index.js';
 import { RouteName } from '@/router/constants.js';
 
-import AttentionQueue from './components/AttentionQueue.vue';
-import PipelinePanel from './components/PipelinePanel.vue';
-import WorkflowPreviewDialog from './components/WorkflowPreviewDialog.vue';
-import WorkspaceInsights from './components/WorkspaceInsights.vue';
+import {
+  AttentionQueue,
+  PipelinePanel,
+  WorkflowPreviewDialog,
+  WorkspaceInsights,
+} from './components/index.js';
 import { useWorkbenchOverview } from './composables/useWorkbenchOverview.js';
 import type { WorkbenchAttentionItem, WorkbenchPipelineItem } from './model/workbench-overview.js';
 

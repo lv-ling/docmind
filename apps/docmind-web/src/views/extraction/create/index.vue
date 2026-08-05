@@ -11,8 +11,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { createExtraction } from '@/api/extractions.js';
 import { listSchemas, listSensitiveRuleTemplates } from '@/api/schemas.js';
-import AppIcon from '@/components/AppIcon.vue';
-import InlineNotice from '@/components/InlineNotice.vue';
+import { AppIcon, InlineNotice } from '@/components/index.js';
 import { RouteName } from '@/router/constants.js';
 import { getQueryString } from '@/router/query.js';
 import { useWorkspaceStore } from '@/stores/workspace.js';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DmButton, DmSplitPane, DmStatus } from '@/ui';
 
-import InlineNotice from '@/components/InlineNotice.vue';
+import { InlineNotice } from '@/components/index.js';
 import { useExtractionReview } from './composables/useExtractionReview.js';
 import {
   getConfidenceLabel,

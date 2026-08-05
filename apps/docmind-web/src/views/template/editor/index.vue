@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { DmSplitPane, DmStatus } from '@/ui';
 
-import InlineNotice from '@/components/InlineNotice.vue';
+import { InlineNotice } from '@/components/index.js';
 
-import TemplateAuditDrawer from './components/TemplateAuditDrawer.vue';
-import TemplateConversionState from './components/TemplateConversionState.vue';
-import TemplateEditorHeader from './components/TemplateEditorHeader.vue';
-import TemplateInspector from './components/TemplateInspector.vue';
-import TemplateToolbar from './components/TemplateToolbar.vue';
-import TemplateVersionStrip from './components/TemplateVersionStrip.vue';
+import {
+  TemplateAuditDrawer,
+  TemplateConversionState,
+  TemplateEditorHeader,
+  TemplateInspector,
+  TemplateToolbar,
+  TemplateVersionStrip,
+} from './components/index.js';
 import { useTemplateEditor } from './composables/useTemplateEditor.js';
 
 const {

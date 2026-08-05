@@ -24,22 +24,27 @@
 ```text
 src/
 ├── api/                         HTTP 客户端与按领域划分的请求函数
-├── components/                  全应用共享的业务无关或应用级组件
+├── components/                  跨页面稳定复用的应用级组件
+│   ├── <component-name>/
+│   │   └── index.vue            共享组件入口
+│   └── index.ts                共享组件统一出口
 ├── contracts/                   HTTP 请求、响应、事件与共享契约
 ├── editor/                      受控文档模型、序列化、校验和模板绑定
 ├── layouts/                     页面布局与应用外壳
 ├── router/
-│   └── modules/                 按布局、权限和运行边界组织路由模块
+│   └── modules/                 按稳定业务模块和运行边界组织路由
 ├── stores/                      跨页面、跨路由的全局状态
 ├── styles/                      基础样式、设计令牌和 Tailwind CSS 入口
 ├── ui/                          无业务语义的设计系统基础组件
 ├── utils/                       与业务无关的纯工具
 └── views/
     └── <domain>/
-        ├── components/          领域内多个页面共享的组件
         └── <page>/
             ├── index.vue        路由页面入口
             ├── components/      仅当前页面使用的组件
+            │   ├── <component-name>/
+            │   │   └── index.vue
+            │   └── index.ts    页面私有组件统一出口
             ├── composables/     当前页面的状态与副作用编排
             └── model/           页面表单模型、纯转换和校验
 tests/
@@ -73,8 +78,8 @@ views/
 
 ### 3.1 依赖方向
 
-- 路由页面可以依赖页面私有实现、领域共享组件、全局组件、Store、API、契约、编辑器、UI 和工具层。
-- 页面私有目录不得被其他页面跨目录深层导入。出现复用时，将代码提升到最近的共同领域目录或真正的全局层。
+- 路由页面可以依赖页面私有实现、共享组件、Store、API、契约、编辑器、UI 和工具层。
+- 页面私有目录不得被其他页面导入。组件经确认需要跨页面稳定复用时，应提升到 `src/components`；无业务语义的基础组件应放入 `src/ui`。
 - `ui`、`utils`、`contracts`、`api`、`stores` 和 `editor` 不得反向导入 `views`。
 - 展示组件不得直接读取路由、调用 API 或修改全局 Store；由页面容器或 composable 注入 props，并通过 emits 报告用户意图。
 - API 请求只能通过 `src/api` 发起。组件内不得直接使用 `fetch`，不得绕过 Server 访问私有对象或 Document AI。
@@ -88,7 +93,8 @@ views/
 - `views` 第一层是稳定业务领域，第二层是路由页面。使用 `views/schema/detail/index.vue`，不要使用 `views/schema-detail/index.vue`。
 - `system` 只放登录、异常页、无权限页等系统级页面。Schema、抽取、模板等业务页面不得因“像配置”而放入 `system`。
 - 页面内部只在确有职责时创建 `components`、`composables`、`model` 等目录，禁止为了形式创建空目录。
-- 常规页面层级控制在 `views/<domain>/<page>/<kind>`。除复杂组件包外，避免继续嵌套多层 `components`。
+- 常规页面层级控制在 `views/<domain>/<page>/<kind>`；页面私有组件固定使用 `views/<domain>/<page>/components/<component-name>/index.vue`。
+- 组件目录名使用小写 `kebab-case`，组件在 TypeScript 和 Vue 模板中使用 `PascalCase` 名称。
 
 ### 4.2 页面命名
 
@@ -96,19 +102,21 @@ views/
 - 禁止继续在 `src/views` 根目录新增 `SomethingView.vue`。
 - 页面目录名称表达页面职责，例如 `list`、`detail`、`create`、`edit`、`review`；同一领域内保持一致的 CRUD 词汇。
 - URL、路由模块、`RouteName`、页面目录和业务术语应尽量一致。兼容旧 URL 时可以只调整代码目录，不得擅自破坏已有地址。
-- 路由文件按布局、权限、守卫和运行边界组织，不要求与 `views` 的领域目录一一对应。
-- 当前规模下，公共页面集中在 `system.ts`，共享工作台布局与权限的业务页面集中在 `workbench.ts`；可在同一文件中使用 `sourceRoutes`、`schemaRoutes` 等数组进行逻辑分组。
-- 禁止为了目录对称或单个页面创建独立路由文件。仅当一个领域具有独立布局、独立权限或守卫、复杂嵌套路由、动态注册需求，或稳定增长到约 4～5 个路由时，才拆为独立模块。
-- 拆分后的模块只导出稳定路由配置，由上层模块统一组合；页面业务逻辑不得写入路由配置文件。
+- `router/modules` 按稳定业务模块拆分，例如 `source.ts`、`schema.ts`、`extraction.ts` 和 `template.ts`；系统页面统一放在 `system.ts`。
+- 同一业务模块的 `list`、`detail`、`create`、`edit` 等页面路由放在同一路由文件中，不得按单个页面继续拆分。
+- `workbench.ts` 只负责工作台父路由、布局、通用权限与子路由组合，不再内聚各业务模块的具体路由配置。
+- 只有当某业务模块内部出现独立布局、独立权限或守卫、复杂嵌套路由或动态注册边界时，才允许进一步拆分子模块。
+- 路由模块只导出稳定路由配置，由上层模块统一组合；页面业务逻辑不得写入路由配置文件。
 
 ### 4.3 组件与其他文件命名
 
-- Vue 组件使用描述明确的 `PascalCase.vue`，例如 `SourceUploadDialog.vue`、`TemplateVersionStrip.vue`。
+- Vue 组件使用描述明确的 `PascalCase` 名称，例如 `SourceUploadDialog`、`TemplateVersionStrip`。
 - 页面私有组件不使用 `View` 后缀；`Page` 或 `View` 只用于真正的路由容器，但本项目路由容器统一为 `index.vue`。
 - 禁止 `Data.vue`、`Content.vue`、`Box.vue`、`Item.vue` 等缺少领域语义的名称。
-- 简单组件使用单文件形式：`components/SourceTaskPanel.vue`。
-- 只有组件拥有专属子组件、类型、测试或资源时才创建组件目录：`components/SourceUploadDialog/index.vue`。
-- `components/index.ts` 是可选公共出口，不是组件成立的条件。只有存在多个稳定导出并能隐藏内部路径时才创建。
+- 共享组件和页面私有组件都使用 `components/<component-name>/index.vue` 结构；不得新增 `components/SourceTaskPanel.vue` 类型的扁平组件文件。
+- 因组件文件统一命名为 `index.vue`，每个组件应使用 `defineOptions({ name: 'SourceTaskPanel' })` 显式声明 `PascalCase` 组件名，便于 DevTools、错误栈和测试识别。
+- 每个存在组件的 `components` 目录必须创建 `index.ts`，使用具名导出统一暴露该层消费者可用的组件和公开类型。
+- 页面私有 `components/index.ts` 只是当前页面的内部出口，不得被其他页面或全局模块导入。
 - composable 使用 `useXxx.ts`；纯转换文件使用明确名词或动词，例如 `schema-form.ts`、`collect-editable-blocks.ts`。
 - 测试使用 `*.test.ts` 或 `*.test.tsx`，统一放在应用根目录 `tests/` 下，并按 `src/` 的领域和职责镜像组织。
 - 禁止继续在 `src/` 中新增测试文件，也不得把不相关领域的测试合并到一个巨型测试文件。
@@ -193,7 +201,10 @@ views/
 - 跨领域或跨顶层目录导入使用 `@/` 别名，例如 `@/contracts`、`@/ui`。
 - 同一页面目录内部可以使用相对导入，但避免超过两级的 `../../../`。出现深层回退通常说明代码位置不正确。
 - 不得从其他领域页面的 `components`、`composables` 或 `model` 深层导入私有实现。
-- `index.ts` 只暴露稳定公共 API。禁止为了缩短路径把目录中所有实现全部导出。
+- 页面应通过 `./components/index.js` 使用页面私有组件，其他模块应通过 `@/components/index.js` 使用共享组件。
+- `components/index.ts` 只暴露该层消费者需要的稳定组件和公开类型，不导出组件内部子组件或实现细节。
+- 同一 `components` 目录中的组件互相依赖时使用直接相对路径，不得经由本层 `index.ts` 反向导入，避免循环依赖。
+- 除强制的组件出口外，其他 `index.ts` 只暴露稳定公共 API，禁止为了缩短路径把目录中所有实现全部导出。
 - 禁止形成循环依赖；底层模块不得通过 barrel 文件间接反向依赖页面层。
 - import 顺序保持为：类型或核心项目边界、第三方依赖、项目内部绝对导入、当前模块相对导入；组间空一行。
 
@@ -307,6 +318,8 @@ pnpm check
 - 拆分组件时先识别输入、输出和副作用，再移动代码；不得通过复制产生新旧两套实现。
 - 样式迁移应同时删除对应旧全局规则，防止新旧样式叠加。
 - 新页面不得落回 `views` 根目录；新页面样式不得落回巨型全局文件。
+- 新增组件必须直接使用 `<component-name>/index.vue` 和本层 `components/index.ts` 结构；现有扁平组件随所属页面或共享模块的后续变更渐进迁移。
+- 路由文件的模块化迁移只改变配置归属与组合方式，必须保持 URL、路由名、meta、守卫与重定向行为不变。
 - 当前任务没有要求架构迁移时，不得仅因发现旧文件超长而擅自实施大规模重构；应记录并在交付说明中提出后续建议。
 
 ## 14. Agent 开工与交付清单
@@ -316,11 +329,12 @@ pnpm check
 - 明确目标业务领域和页面。
 - 阅读相关路由、API、契约、Store、页面和测试。
 - 检查工作区已有改动并保护用户文件。
-- 判断变更属于页面容器、页面私有、领域共享还是全局能力。
+- 判断变更属于页面容器、页面私有、跨页面共享还是无业务语义的 UI 能力。
 
 交付前：
 
-- 确认没有新增扁平页面、跨领域私有导入或页面级全局样式。
+- 确认没有新增扁平页面、扁平组件、跨页面私有导入或页面级全局样式。
+- 确认路由按稳定业务模块组织，页面和共享组件都通过对应 `components/index.ts` 出口使用。
 - 确认命名、组件归属、资源清理、敏感数据和可访问状态符合本规范。
 - 运行与改动相称的验证命令。
 - 检查 `git diff`，只报告实际修改和实际验证结果。

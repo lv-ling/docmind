@@ -1,23 +1,68 @@
-:root {
-  --dm-color-canvas: #edf2f4;
-  --dm-color-paper: #fff;
-  --dm-color-paper-muted: #f5f8f9;
-  --dm-color-ink: #18263a;
-  --dm-color-ink-muted: #627286;
-  --dm-color-border: #d9e2e8;
-  --dm-color-border-strong: #aebdca;
-  --dm-color-brand: #164a72;
-  --dm-color-brand-strong: #0d3455;
-  --dm-color-accent: #e96f3d;
-  --dm-color-focus: #0f83b8;
-  --dm-color-success: #208365;
-  --dm-color-warning: #a76b11;
-  --dm-color-danger: #bd4d4a;
-  --dm-color-control-border: #b7cbd5;
-  --dm-color-status-border: transparent;
-  --dm-color-status-surface: #eef4f6;
+:root,
+.dm-theme {
+  color-scheme: light;
+
+  /* DocMind v2.0 prototype palette */
+  --dm-color-canvas: #f5f5f7;
+  --dm-color-paper: #ffffff;
+  --dm-color-paper-muted: #f2f2f7;
+  --dm-color-paper-raised: rgb(255 255 255 / 82%);
+  --dm-color-ink: #1d1d1f;
+  --dm-color-ink-secondary: #3a3a3c;
+  --dm-color-ink-muted: #86868b;
+  --dm-color-border: #e5e5ea;
+  --dm-color-border-strong: #d1d1d6;
+  --dm-color-brand: #0071e3;
+  --dm-color-brand-strong: #0077ed;
+  --dm-color-brand-soft: #e8f3ff;
+  --dm-color-focus: #0071e3;
+  --dm-color-success: #17845f;
+  --dm-color-success-soft: #e8f7f0;
+  --dm-color-warning: #a66508;
+  --dm-color-warning-soft: #fff6df;
+  --dm-color-danger: #d13c4f;
+  --dm-color-danger-soft: #fff0f2;
+  --dm-color-info: #0071e3;
+  --dm-color-info-soft: #e8f3ff;
+  --dm-color-diff-insert: #16803f;
+  --dm-color-diff-insert-soft: #dcfce7;
+  --dm-color-diff-delete: #b42335;
+  --dm-color-diff-delete-soft: #fee2e2;
+  --dm-color-diff-modify: #925f0c;
+  --dm-color-diff-modify-soft: #fef3c7;
+
+  /* Compatibility aliases while legacy page styles are migrated component by component. */
+  --dm-color-zinc-50: #f9f9fb;
+  --dm-color-zinc-100: #f2f2f7;
+  --dm-color-zinc-200: #e5e5ea;
+  --dm-color-zinc-300: #d1d1d6;
+  --dm-color-zinc-400: #aeaeb2;
+  --dm-color-zinc-500: #86868b;
+  --dm-color-zinc-600: #636366;
+  --dm-color-zinc-700: #48484a;
+  --dm-color-zinc-800: #2c2c2e;
+  --dm-color-zinc-900: #1d1d1f;
+
+  --dm-font-ui:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue',
+    'Segoe UI', 'Noto Sans SC', 'Microsoft YaHei', Arial, sans-serif;
+  --dm-font-document: 'Noto Serif SC', 'Songti SC', 'Times New Roman', serif;
+  --dm-font-mono: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+
   --dm-radius-small: 0.5rem;
-  --dm-radius-medium: 1rem;
-  --dm-shadow-float: 0 1.25rem 3.5rem rgb(25 53 76 / 12%);
-  --dm-shadow-primary: 0 0.35rem 0.9rem rgb(22 74 114 / 18%);
+  --dm-radius-control: 0.625rem;
+  --dm-radius-medium: 0.75rem;
+  --dm-radius-large: 1rem;
+  --dm-radius-pill: 999px;
+
+  --dm-shadow-card: 0 1px 2px rgb(0 0 0 / 4%);
+  --dm-shadow-float: 0 18px 48px rgb(0 0 0 / 14%);
+  --dm-shadow-primary: 0 4px 12px rgb(0 113 227 / 22%);
+
+  --dm-motion-fast: 140ms;
+  --dm-motion-normal: 220ms;
+  --dm-motion-easing: cubic-bezier(0, 0, 0.2, 1);
+
+  font-family: var(--dm-font-ui);
+  color: var(--dm-color-ink);
 }

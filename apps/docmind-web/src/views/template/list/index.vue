@@ -6,8 +6,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { createTemplate, listTemplates } from '@/api/templates.js';
-import AppIcon from '@/components/AppIcon.vue';
-import InlineNotice from '@/components/InlineNotice.vue';
+import { AppIcon, InlineNotice } from '@/components/index.js';
 import { RouteName } from '@/router/constants.js';
 import { getQueryString } from '@/router/query.js';
 import { useWorkspaceStore } from '@/stores/workspace.js';

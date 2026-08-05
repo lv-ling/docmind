@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import InlineNotice from '@/components/InlineNotice.vue';
+import { InlineNotice } from '@/components/index.js';
 
-import SchemaBuilder from './components/SchemaBuilder.vue';
-import SensitiveRulesPanel from './components/SensitiveRulesPanel.vue';
+import { SchemaBuilder, SensitiveRulesPanel } from './components/index.js';
 import { useSchemaList } from './composables/useSchemaList.js';
 import { createDefaultSensitiveRules } from './model/schema-form.js';
 

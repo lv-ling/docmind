@@ -7,8 +7,9 @@ import { RouteName } from '@/router/constants.js';
 import { useAuthStore } from '@/stores/auth.js';
 import { useWorkspaceStore } from '@/stores/workspace.js';
 
-import GlobalHeader from './components/GlobalHeader.vue';
-import WorkspaceSidebar from './components/WorkspaceSidebar.vue';
+import { GlobalHeader, WorkspaceSidebar } from './components/index.js';
+
+defineOptions({ name: 'AppShell' });
 
 const auth = useAuthStore();
 const workspace = useWorkspaceStore();
@@ -107,11 +108,11 @@ watch(
 
 .workspace-shell {
   display: grid;
-  grid-template-columns: 215px minmax(0, 1fr);
+  grid-template-columns: 256px minmax(0, 1fr);
   width: 100%;
   min-height: 100dvh;
   color: var(--dm-color-ink);
-  background: var(--dm-color-paper);
+  background: var(--dm-color-canvas);
 }
 
 .workspace-shell--immersive {
@@ -120,7 +121,7 @@ watch(
 
 .workspace-content {
   display: grid;
-  grid-template-rows: 45px minmax(0, 1fr);
+  grid-template-rows: 56px minmax(0, 1fr);
   min-width: 0;
   height: 100dvh;
   overflow: hidden;
@@ -131,8 +132,7 @@ watch(
   min-height: 0;
   padding: 0;
   overflow: auto;
-  background:
-    radial-gradient(circle at 96% 0%, rgb(99 102 241 / 5%), transparent 38%), var(--dm-color-paper);
+  background: var(--dm-color-canvas);
 }
 
 .workspace-sidebar-backdrop {
